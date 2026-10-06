@@ -43,7 +43,7 @@ const wantsJson = (req) => /application\/json/.test(req.headers['content-type'] 
 
 function reply(req, res, status, payload, type = 'general') {
   if (wantsJson(req)) return res.status(status).json(payload);
-  return res.redirect(303, payload.ok ? `/contact/thanks?type=${type}` : '/contact#submit-error');
+  return res.status(status).redirect(303, payload.ok ? `/contact/thanks?type=${type}` : '/contact#submit-error');
 }
 
 function sameOrigin(req) {
@@ -68,7 +68,6 @@ async function storeLead(lead) {
     body: JSON.stringify({
       name: f.name,
       email: f.email || null,
-      phone: f.phone || null,
       company: f.company || f.practice || null,
       website: f.website || null,
       industry: f.industry || null,
@@ -81,8 +80,6 @@ async function storeLead(lead) {
       practice: f.practice || null,
       location: f.location || null,
       treatments: f.treatments?.length ? f.treatments : null,
-      // Keep message populated for compatibility with the original schema.
-      message: f.challenge || f.notes || null,
       form_type: lead.form_type,
       created_at: lead.submitted_at,
       page_path: lead.page,
@@ -123,9 +120,6 @@ export default async function handler(req, res) {
   for (const [key, max] of Object.entries(spec.text)) fields[key] = oneLine(body[key], max);
   for (const [key, max] of Object.entries(spec.list)) fields[key] = cleanList(body[key], max);
   for (const key of ['offering', 'challenge', 'notes']) if (key in fields) fields[key] = clean(body[key], spec.text[key]);
-
-  // Preserve a phone field when a form provides one, even though it is optional.
-  if ('phone' in body) fields.phone = oneLine(body.phone, 80);
 
   const errors = {};
   for (const key of spec.required) {

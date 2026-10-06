@@ -1,0 +1,13 @@
+{
+  "name": "Revanta",
+  "short_name": "Revanta",
+  "description": "AI-powered growth systems for modern businesses",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0A1730",
+  "theme_color": "#0A1730",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

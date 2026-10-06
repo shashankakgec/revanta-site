@@ -1,0 +1,14 @@
+{
+  "name": "revanta-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Revanta corporate website. Zero-dependency static site generator, deployable on Vercel.",
+  "engines": { "node": ">=18.17" },
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node dev.mjs",
+    "start": "node dev.mjs --no-watch",
+    "check": "node build.mjs && node scripts/check.mjs"
+  }
+}

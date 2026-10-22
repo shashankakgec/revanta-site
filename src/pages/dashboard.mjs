@@ -152,177 +152,70 @@ export default {
   var APPROVED_EMAILS = ['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in'];
   var SUPABASE_URL = 'https://zedwounhjhfiuystjfhr.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo';
-  var login = document.getElementById('dash-login');
-  var app = document.getElementById('dash-app');
-  var loginForm = document.getElementById('dash-login-form');
-  var loginMessage = document.getElementById('dash-login-message');
-  var loginButton = document.getElementById('dash-login-btn');
-  var signout = document.getElementById('dash-signout');
-  var themeToggle = document.getElementById('dash-theme-toggle');
-  function setTheme(theme){
-    var dark=theme==='dark';
-    document.body.classList.toggle('dark-mode',dark);
-    themeToggle.textContent=dark?'☀':'☾';
-    themeToggle.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');
-    themeToggle.setAttribute('title',dark?'Switch to light theme':'Switch to dark theme');
-    try{window.localStorage.setItem('revanta-dashboard-theme',dark?'dark':'light');}catch(e){}
-  }
-  var savedTheme='light';
-  try{savedTheme=window.localStorage.getItem('revanta-dashboard-theme')||'light';}catch(e){}
-  setTheme(savedTheme);
-  themeToggle.addEventListener('click',function(){
-    setTheme(document.body.classList.contains('dark-mode')?'light':'dark');
-  });
-  var statusEl = document.getElementById('dash-status');
-  var rowsEl = document.getElementById('dash-rows');
-  var tableWrap = document.querySelector('.dash-table-wrap');
-  var cardsEl = document.getElementById('dash-cards');
-  var tableViewBtn = document.getElementById('dash-table-view');
-  var cardViewBtn = document.getElementById('dash-card-view');
-  var viewMode = 'table';
-  var allLeads = [];
-  var taskFilter = '';
-  if (!window.supabase || !window.supabase.createClient) {
-    loginMessage.textContent = 'The sign-in library did not load. Check your connection and reload.';
-    loginMessage.classList.add('dash-error'); return;
-  }
-  var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
-  });
-  function esc(v){return String(v == null ? '' : v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function message(el, text, error){el.textContent=text;el.classList.toggle('dash-error',!!error);}
-  function showLoggedOut(text){login.hidden=false;app.hidden=true;signout.hidden=true;if(text)message(loginMessage,text,false);}
-  function showLoggedIn(){login.hidden=true;app.hidden=false;signout.hidden=false;}
+  var login=document.getElementById('dash-login'), app=document.getElementById('dash-app');
+  var loginForm=document.getElementById('dash-login-form'), loginMessage=document.getElementById('dash-login-message');
+  var loginButton=document.getElementById('dash-login-btn'), signout=document.getElementById('dash-signout');
+  var statusEl=document.getElementById('dash-status'), rowsEl=document.getElementById('dash-rows');
+  var tableWrap=document.querySelector('.dash-table-wrap'), cardsEl=document.getElementById('dash-cards');
+  var tableViewBtn=document.getElementById('dash-table-view'), cardViewBtn=document.getElementById('dash-card-view');
+  var allLeads=[], taskFilter='', viewMode='table';
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function msg(el,text,error){el.textContent=text;el.classList.toggle('dash-error',!!error);}
+  function showOut(text){login.hidden=false;app.hidden=true;signout.hidden=true;if(text)msg(loginMessage,text,false);}
+  function showIn(){login.hidden=true;app.hidden=false;signout.hidden=false;}
   function dateLabel(v){if(!v)return '—';var d=new Date(v);return isNaN(d.getTime())?'—':d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}
+  var themeToggle=document.getElementById('dash-theme-toggle');
+  function setTheme(theme){var dark=theme==='dark';document.body.classList.toggle('dark-mode',dark);themeToggle.textContent=dark?'☀':'☾';themeToggle.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');try{localStorage.setItem('revanta-dashboard-theme',theme);}catch(e){}}
+  try{setTheme(localStorage.getItem('revanta-dashboard-theme')||'light');}catch(e){setTheme('light');}
+  themeToggle.addEventListener('click',function(){setTheme(document.body.classList.contains('dark-mode')?'light':'dark');});
+  if(!window.supabase||!window.supabase.createClient){msg(loginMessage,'Sign-in library failed to load. Reload and try again.',true);return;}
+  var authClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+  async function api(path,options){
+    var sessionResult=await authClient.auth.getSession();
+    var session=sessionResult.data&&sessionResult.data.session;
+    if(!session)throw new Error('Your session expired. Please sign in again.');
+    var response=await fetch(path,Object.assign({method:'GET',headers:{Authorization:'Bearer '+session.access_token}},options||{}));
+    var data=await response.json().catch(function(){return {};});
+    if(response.status===401){await authClient.auth.signOut();throw new Error('Your session expired. Please sign in again.');}
+    if(!response.ok)throw new Error(data.error==='database_not_configured'?'Neon is not configured for this preview.':data.error==='forbidden'?'This account is not authorised.':'Request failed ('+response.status+').');
+    return data;
+  }
+  function taskKind(x){if(!x.follow_up_at||x.status==='Won'||x.status==='Lost')return '';var d=new Date(x.follow_up_at),now=new Date();if(isNaN(d.getTime()))return '';var today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),week=new Date(today.getTime()+7*86400000);if(d<today)return 'overdue';if(d<tomorrow)return 'today';if(d<week)return 'upcoming';return '';}
   function render(){
-    var q=document.getElementById('dash-search').value.trim().toLowerCase();
-    var filter=document.getElementById('dash-filter').value;
-    var now=new Date();
-    var startToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    var startTomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
-    var nextWeek=new Date(startToday.getTime()+7*24*60*60*1000);
-    function activeLead(x){return x.status!=='Won'&&x.status!=='Lost';}
-    function taskKind(x){
-      if(!x.follow_up_at||!activeLead(x)) return '';
-      var d=new Date(x.follow_up_at); if(isNaN(d.getTime())) return '';
-      if(d<startToday) return 'overdue';
-      if(d>=startToday&&d<startTomorrow) return 'today';
-      if(d>=startTomorrow&&d<nextWeek) return 'upcoming';
-      return '';
-    }
-    var dueLeads=allLeads.filter(function(x){return !!taskKind(x);}).sort(function(a,b){return new Date(a.follow_up_at)-new Date(b.follow_up_at);});
-    document.getElementById('followup-overdue').textContent=dueLeads.filter(function(x){return taskKind(x)==='overdue';}).length;
-    document.getElementById('followup-today').textContent=dueLeads.filter(function(x){return taskKind(x)==='today';}).length;
-    document.getElementById('followup-upcoming').textContent=dueLeads.filter(function(x){return taskKind(x)==='upcoming';}).length;
-    document.querySelectorAll('[data-task-filter]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-task-filter')===taskFilter?'true':'false');});
-    var taskList=document.getElementById('dash-followup-list');
-    var priority=dueLeads.filter(function(x){return taskFilter?taskKind(x)===taskFilter:true;}).slice(0,5);
-    taskList.innerHTML=priority.length?priority.map(function(x){
-      var kind=taskKind(x);var label=kind==='overdue'?'Overdue':kind==='today'?'Due today':'Upcoming';
-      return '<div class="dash-followup-item"><div><strong>'+esc(x.name||'Unnamed lead')+'</strong><p>'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':esc(x.company||'No contact details'))+' · '+esc(label)+' · '+esc(dateLabel(x.follow_up_at))+'</p></div><button type="button" class="dash-btn dash-btn--light" data-open-lead="'+esc(x.id)+'">Open lead</button></div>';
-    }).join(''):'<div class="dash-followup-empty">'+(taskFilter?'No leads in this follow-up group.':'No follow-ups due or scheduled in the next 7 days. Add a follow-up date to a lead to see it here.')+'</div>';
-    var visible=allLeads.filter(function(x){
-      var hay=[x.name,x.email,x.industry,x.budget,x.company,x.website].join(' ').toLowerCase();
-      return (!q||hay.indexOf(q)!==-1)&&(!filter||x.status===filter)&&(!taskFilter||taskKind(x)===taskFilter);
-    });
+    var q=document.getElementById('dash-search').value.trim().toLowerCase(),filter=document.getElementById('dash-filter').value;
+    var due=allLeads.filter(function(x){return !!taskKind(x)}).sort(function(a,b){return new Date(a.follow_up_at)-new Date(b.follow_up_at)});
+    ['overdue','today','upcoming'].forEach(function(k){document.getElementById('followup-'+k).textContent=due.filter(function(x){return taskKind(x)===k}).length;});
+    document.querySelectorAll('[data-task-filter]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-task-filter')===taskFilter?'true':'false')});
+    var priority=due.filter(function(x){return taskFilter?taskKind(x)===taskFilter:true}).slice(0,5);
+    document.getElementById('dash-followup-list').innerHTML=priority.length?priority.map(function(x){var k=taskKind(x),label=k==='overdue'?'Overdue':k==='today'?'Due today':'Upcoming';return '<div class="dash-followup-item"><div><strong>'+esc(x.name||'Unnamed lead')+'</strong><p>'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'No email')+' · '+label+' · '+esc(dateLabel(x.follow_up_at))+'</p></div><button type="button" class="dash-btn dash-btn--light" data-open-lead="'+esc(x.id)+'">Open lead</button></div>'}).join(''):'<div class="dash-followup-empty">'+(taskFilter?'No leads in this follow-up group.':'No follow-ups due or scheduled in the next 7 days.')+'</div>';
+    var visible=allLeads.filter(function(x){var hay=[x.name,x.email,x.industry,x.budget].join(' ').toLowerCase();return (!q||hay.indexOf(q)!==-1)&&(!filter||x.status===filter)&&(!taskFilter||taskKind(x)===taskFilter)});
     document.getElementById('stat-total').textContent=allLeads.length;
-    document.getElementById('stat-new').textContent=allLeads.filter(function(x){return x.status==='New';}).length;
-    document.getElementById('stat-meetings').textContent=allLeads.filter(function(x){return x.status==='Meeting Booked';}).length;
-    document.getElementById('stat-won').textContent=allLeads.filter(function(x){return x.status==='Won';}).length;
-    rowsEl.innerHTML=visible.map(function(x){
-      var d=x.follow_up_at?new Date(x.follow_up_at):null;
-      var localDate=d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
-      return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+'</div>'+(x.company?'<div class="dash-muted">'+esc(x.company)+'</div>':'')+'</td><td><div>'+esc(x.industry||'—')+'</div><div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div><div class="dash-muted">'+esc(x.form_type||'')+'</div></td><td>'+esc(dateLabel(x.created_at))+'<div class="dash-muted">'+esc(x.page_path||'')+'</div></td><td><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" aria-label="Internal notes" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td></tr>';
-    }).join('');
-    if(!visible.length) rowsEl.innerHTML='<tr><td colspan="6" style="padding:24px;color:#6c7890">No leads match this search.</td></tr>';
-    cardsEl.innerHTML=visible.map(function(x){
-      var d=x.follow_up_at?new Date(x.follow_up_at):null;
-      var localDate=d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
-      return '<article class="dash-lead-card" data-id="'+esc(x.id)+'">'+
-        '<div class="dash-lead-card-top"><div><h3>'+esc(x.name||'Unnamed')+'</h3><div class="dash-lead-meta">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'No email provided')+'</div>'+(x.company?'<div class="dash-lead-meta">'+esc(x.company)+'</div>':'')+'</div><span class="dash-pill">'+esc(x.status||'New')+'</span></div>'+
-        '<div class="dash-lead-details"><div><span>Industry</span><strong>'+esc(x.industry||'—')+'</strong></div><div><span>Budget</span><strong>'+esc(x.budget||'—')+'</strong></div><div><span>Enquiry type</span><strong>'+esc(x.form_type||'—')+'</strong></div><div><span>Submitted</span><strong>'+esc(dateLabel(x.created_at))+'</strong></div></div>'+
-        '<div class="dash-lead-meta">Source page: '+esc(x.page_path||'—')+'</div>'+
-        '<div class="dash-card-actions"><div><label>Status</label><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(st){return '<option'+((x.status||'New')===st?' selected':'')+'>'+st+'</option>';}).join('')+'</select></div><div><label>Follow-up</label><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></div></div>'+
-        '<div class="dash-card-notes"><label>Internal notes</label><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" aria-label="Internal notes" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save dash-card-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></div>'+
-        '</article>';
-    }).join('');
-    if(!visible.length) cardsEl.innerHTML='<div class="dash-card" style="grid-column:1/-1;color:#6c7890">No leads match this search.</div>';
-    tableWrap.hidden=viewMode!=='table';
-    cardsEl.hidden=viewMode!=='cards';
-    tableViewBtn.setAttribute('aria-pressed',viewMode==='table'?'true':'false');
-    cardViewBtn.setAttribute('aria-pressed',viewMode==='cards'?'true':'false');
-    message(statusEl,'Showing '+visible.length+' of '+allLeads.length+' leads.',false);
+    document.getElementById('stat-new').textContent=allLeads.filter(function(x){return x.status==='New'}).length;
+    document.getElementById('stat-meetings').textContent=allLeads.filter(function(x){return x.status==='Meeting Booked'}).length;
+    document.getElementById('stat-won').textContent=allLeads.filter(function(x){return x.status==='Won'}).length;
+    function fields(x){var d=x.follow_up_at?new Date(x.follow_up_at):null;return d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';}
+    function statusSelect(x){return '<select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select>';}
+    function editor(x){return '<div class="dash-card-actions"><div><label>Status</label>'+statusSelect(x)+'</div><div><label>Follow-up</label><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(fields(x))+'" aria-label="Follow-up date"></div></div><div class="dash-card-notes"><label>Internal notes</label><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></div>';}
+    rowsEl.innerHTML=visible.map(function(x){return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+'</div></td><td>'+esc(x.industry||'—')+'<div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div></td><td>'+esc(dateLabel(x.created_at))+'</td><td>'+statusSelect(x)+'</td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(fields(x))+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td></tr>'}).join('');
+    if(!visible.length)rowsEl.innerHTML='<tr><td colspan="6" style="padding:24px;color:#6c7890">No leads match this search.</td></tr>';
+    cardsEl.innerHTML=visible.map(function(x){return '<article class="dash-lead-card" data-id="'+esc(x.id)+'"><div class="dash-lead-card-top"><div><h3>'+esc(x.name||'Unnamed')+'</h3><div class="dash-lead-meta">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'No email')+'</div></div><span class="dash-pill">'+esc(x.status||'New')+'</span></div><div class="dash-lead-details"><div><span>Industry</span><strong>'+esc(x.industry||'—')+'</strong></div><div><span>Budget</span><strong>'+esc(x.budget||'—')+'</strong></div><div><span>Submitted</span><strong>'+esc(dateLabel(x.created_at))+'</strong></div><div><span>Form</span><strong>'+esc(x.form_type||'—')+'</strong></div></div>'+editor(x)+'</article>'}).join('');
+    if(!visible.length)cardsEl.innerHTML='<div class="dash-card">No leads match this search.</div>';
+    tableWrap.hidden=viewMode!=='table';cardsEl.hidden=viewMode!=='cards';
+    tableViewBtn.setAttribute('aria-pressed',viewMode==='table'?'true':'false');cardViewBtn.setAttribute('aria-pressed',viewMode==='cards'?'true':'false');
+    msg(statusEl,'Showing '+visible.length+' of '+allLeads.length+' leads.',false);
   }
-  async function loadLeads(){
-    message(statusEl,'Loading leads…',false);
-    var result=await client.from('leads').select('id,name,email,company,website,industry,budget,form_type,created_at,page_path,status,follow_up_at,internal_notes').order('created_at',{ascending:false}).limit(500);
-    if(result.error){message(statusEl,'Could not load leads: '+result.error.message,true);return;}
-    allLeads=result.data||[];render();
-  }
-  async function verifySession(){
-    var result=await client.auth.getSession();
-    var user=result.data&&result.data.session&&result.data.session.user;
-    if(!user){showLoggedOut();return;}
-    if(APPROVED_EMAILS.indexOf((user.email||'').toLowerCase())===-1){
-      await client.auth.signOut();showLoggedOut('This account is not authorised for the Revanta dashboard.');return;
-    }
-    showLoggedIn();await loadLeads();
-  }
-  loginForm.addEventListener('submit',async function(e){
-    e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';
-    var password=document.getElementById('dash-password').value;
-    var email=document.getElementById('dash-email').value.trim().toLowerCase();
-    var result=await client.auth.signInWithPassword({email:email,password:password});
-    if(result.error) message(loginMessage,'Could not sign in: '+result.error.message,true);
-    else {
-      document.getElementById('dash-password').value='';
-      await verifySession();
-      if(!app.hidden) message(loginMessage,'Signed in successfully.',false);
-    }
-    loginButton.disabled=false;loginButton.textContent='Sign in';
-  });
-  signout.addEventListener('click',async function(){await client.auth.signOut();showLoggedOut('You have signed out.');});
-  document.getElementById('dash-search').addEventListener('input',render);
-  document.querySelectorAll('[data-task-filter]').forEach(function(button){button.addEventListener('click',function(){taskFilter=taskFilter===button.getAttribute('data-task-filter')?'':button.getAttribute('data-task-filter');render();});});
+  async function loadLeads(){msg(statusEl,'Loading leads from Neon…',false);try{var data=await api('/api/dashboard-leads');allLeads=data.leads||[];render();}catch(e){msg(statusEl,e.message,true);}}
+  async function verifySession(){var r=await authClient.auth.getSession(),user=r.data&&r.data.session&&r.data.session.user;if(!user){showOut();return;}if(!APPROVED_EMAILS.includes(String(user.email||'').toLowerCase())){await authClient.auth.signOut();showOut('This account is not authorised for the Revanta dashboard.');return;}showIn();await loadLeads();}
+  loginForm.addEventListener('submit',async function(e){e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';var result=await authClient.auth.signInWithPassword({email:document.getElementById('dash-email').value.trim().toLowerCase(),password:document.getElementById('dash-password').value});if(result.error)msg(loginMessage,'Could not sign in: '+result.error.message,true);else{document.getElementById('dash-password').value='';await verifySession();}loginButton.disabled=false;loginButton.textContent='Sign in';});
+  signout.addEventListener('click',async function(){await authClient.auth.signOut();showOut('You have signed out.');});
+  document.getElementById('dash-search').addEventListener('input',render);document.getElementById('dash-filter').addEventListener('change',render);
+  document.querySelectorAll('[data-task-filter]').forEach(function(b){b.addEventListener('click',function(){taskFilter=taskFilter===b.getAttribute('data-task-filter')?'':b.getAttribute('data-task-filter');render();});});
   document.getElementById('dash-followup-reset').addEventListener('click',function(){taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();});
-  document.getElementById('dash-followup-list').addEventListener('click',function(e){
-    var button=e.target.closest('[data-open-lead]');if(!button)return;
-    var id=button.getAttribute('data-open-lead');taskFilter='';
-    document.getElementById('dash-search').value='';
-    document.getElementById('dash-filter').value='';
-    render();
-    var selector='[data-id="'+String(id).replace(/"/g,'\\"')+'"]';
-    var target=(viewMode==='table'?rowsEl:cardsEl).querySelector(selector);
-    if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.style.outline='2px solid #7da7e8';setTimeout(function(){target.style.outline='';},1800);}
-  });
-  document.getElementById('dash-filter').addEventListener('change',render);
-  tableViewBtn.addEventListener('click',function(){viewMode='table';render();});
-  cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});
-  async function saveLeadFromRow(button){
-    var row=button.closest('[data-id]');var id=row.getAttribute('data-id');
-    var status=row.querySelector('[data-field="status"]').value;
-    var follow=row.querySelector('[data-field="follow_up_at"]').value;
-    var notes=row.querySelector('[data-field="internal_notes"]').value.trim();
-    var msg=row.querySelector('[data-row-message]');
-    button.disabled=true;button.textContent='Saving…';
-    var patch={status:status,follow_up_at:follow?new Date(follow).toISOString():null,internal_notes:notes||null};
-    var result=await client.from('leads').update(patch).eq('id',id).select('id,status,follow_up_at,internal_notes').single();
-    button.disabled=false;button.textContent='Save changes';
-    if(result.error){message(msg,'Not saved: '+result.error.message,true);return;}
-    var lead=allLeads.find(function(x){return String(x.id)===String(id);});
-    if(lead){lead.status=result.data.status;lead.follow_up_at=result.data.follow_up_at;lead.internal_notes=result.data.internal_notes;}
-    message(msg,'Saved',false);render();
-  }
-  rowsEl.addEventListener('click',async function(e){
-    var button=e.target.closest('[data-save]');if(button) await saveLeadFromRow(button);
-  });
-  cardsEl.addEventListener('click',async function(e){
-    var button=e.target.closest('[data-save]');if(button) await saveLeadFromRow(button);
-  });
-  client.auth.onAuthStateChange(function(event,session){
-    if(event==='SIGNED_OUT'){showLoggedOut();}
-    else if(event==='SIGNED_IN'&&session&&session.user&&APPROVED_EMAILS.indexOf((session.user.email||'').toLowerCase())!==-1){showLoggedIn();loadLeads();}
-  });
+  document.getElementById('dash-followup-list').addEventListener('click',function(e){var b=e.target.closest('[data-open-lead]');if(!b)return;taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();var target=(viewMode==='table'?rowsEl:cardsEl).querySelector('[data-id="'+b.getAttribute('data-open-lead')+'"]');if(target)target.scrollIntoView({behavior:'smooth',block:'center'});});
+  tableViewBtn.addEventListener('click',function(){viewMode='table';render();});cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});
+  async function saveLead(button){var row=button.closest('[data-id]'),id=row.getAttribute('data-id'),status=row.querySelector('[data-field="status"]').value,follow=row.querySelector('[data-field="follow_up_at"]').value,notes=row.querySelector('[data-field="internal_notes"]').value.trim(),label=row.querySelector('[data-row-message]');button.disabled=true;button.textContent='Saving…';try{var data=await api('/api/dashboard-leads',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,status:status,follow_up_at:follow?new Date(follow).toISOString():null,internal_notes:notes})});var lead=allLeads.find(function(x){return String(x.id)===String(id)});if(lead){lead.status=data.lead.status;lead.follow_up_at=data.lead.follow_up_at;lead.internal_notes=data.lead.internal_notes;}msg(label,'Saved to Neon.',false);render();}catch(e){msg(label,'Not saved: '+e.message,true);button.disabled=false;button.textContent='Save changes';}}
+  rowsEl.addEventListener('click',function(e){var b=e.target.closest('[data-save]');if(b)saveLead(b);});cardsEl.addEventListener('click',function(e){var b=e.target.closest('[data-save]');if(b)saveLead(b);});
+  authClient.auth.onAuthStateChange(function(event){if(event==='SIGNED_OUT')showOut();});
   verifySession();
 })();
 </script>

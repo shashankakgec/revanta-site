@@ -1,5 +1,7 @@
+import { neon } from '@neondatabase/serverless';
+
 // POST /api/lead
-// Receives and validates Revanta growth-audit forms, then stores every valid lead in Supabase.
+// Receives and validates Revanta growth-audit forms, then stores every valid lead in Neon.
 
 const FORMS = {
   general: {
@@ -48,43 +50,13 @@ function sameOrigin(req) {
 }
 
 async function storeLead(lead) {
-  const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = process.env;
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) throw new Error('not_configured');
-
+  if (!process.env.NEON_DATABASE_URL) throw new Error('not_configured');
+  const sql = neon(process.env.NEON_DATABASE_URL);
   const f = lead.fields;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-      Prefer: 'return=minimal',
-    },
-    body: JSON.stringify({
-      name: f.name,
-      email: f.email,
-      company: f.company || null,
-      website: f.website || null,
-      industry: f.industry,
-      offering: f.offering || null,
-      customer_value: f.customer_value || null,
-      channels: f.channels || [],
-      challenge: f.challenge || null,
-      budget: f.budget,
-      notes: f.notes || null,
-      form_type: lead.form_type,
-      created_at: lead.submitted_at,
-      page_path: lead.page,
-      attribution: lead.attribution,
-      user_agent: lead.user_agent,
-    }),
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    console.error('[lead] Supabase insert failed:', response.status, detail.slice(0, 500));
-    throw new Error('database_failed');
-  }
+  await sql`INSERT INTO public.leads
+    (name,email,company,website,industry,offering,customer_value,channels,challenge,budget,notes,form_type,created_at,page_path,attribution,user_agent,status)
+    VALUES
+    (${f.name},${f.email},${f.company || null},${f.website || null},${f.industry},${f.offering || null},${f.customer_value || null},${f.channels || []},${f.challenge || null},${f.budget},${f.notes || null},${lead.form_type},${lead.submitted_at},${lead.page},${JSON.stringify(lead.attribution)},${lead.user_agent},'New')`;
 }
 
 export default async function handler(req, res) {

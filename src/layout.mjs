@@ -8,8 +8,11 @@ const FONT_URL =
 
 const SAFE_ID = /^[A-Za-z0-9_-]{3,40}$/;
 
-const navItems = () => config.nav.filter((n) => !n.flag || config.features[n.flag]);
-const isActive = (href, path) => path === href || path.startsWith(`${href}/`);
+const navItems = () => [
+  { label: 'Home', href: '/' },
+  ...config.nav.filter((n) => n.href !== '/' && (!n.flag || config.features[n.flag])),
+];
+const isActive = (href, path) => path === href || (href !== '/' && path.startsWith(`${href}/`));
 
 export const pageUrl = (path) => (path === '/' ? `${config.url}/` : `${config.url}${path}`);
 
@@ -78,7 +81,6 @@ const gaHead = (id) =>
 
 function analyticsSnippets() {
   const { gtmId, gaId } = config.analytics;
-  // Only production builds load third-party analytics. Preview deployments stay clean.
   if (!isProduction) return { head: '', body: '' };
   if (SAFE_ID.test(gtmId)) return { head: gtmHead(gtmId), body: gtmBody(gtmId) };
   if (SAFE_ID.test(gaId)) return { head: gaHead(gaId), body: '' };
@@ -134,9 +136,9 @@ export function renderDocument(page, assets, { year }) {
     : '';
   const ld = structuredData(page)
     .map((o) => `<script type="application/ld+json">${jsonForScript(o)}</script>`)
-    .join('\n');
-  const pageScripts = (page.scripts || []).map((s) => `<script defer src="${assets.js[s]}"></script>`).join('\n');
-  const bodyClass = `page-${page.path === '/' ? 'home' : page.path.slice(1).replace(/\//g, '-')}`;
+    .join('\\n');
+  const pageScripts = (page.scripts || []).map((s) => `<script defer src="${assets.js[s]}"></script>`).join('\\n');
+  const bodyClass = `page-${page.path === '/' ? 'home' : page.path.slice(1).replace(/\\//g, '-')}`;
 
   return `<!doctype html>
 <html lang="en">

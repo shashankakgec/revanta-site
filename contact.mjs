@@ -12,18 +12,12 @@ const industryOptions = [
 ];
 const channelOptions = ['Google Ads', 'Meta Ads', 'SEO / organic', 'Referrals', 'Email or SMS', 'Outbound sales', 'Other'];
 const budgetOptions = [
-  'Under $2,000',
-  '$2,000 to $5,000',
-  '$5,000 to $10,000',
-  '$10,000 to $25,000',
-  '$25,000 or more',
+  'Under £1,000',
+  '£1,000 to £3,000',
+  '£3,000 to £5,000',
+  '£5,000 to £10,000',
+  '£10,000 or more',
   'Prefer not to say',
-];
-const treatmentOptions = [
-  'Dental implants',
-  'Full-arch restorations',
-  'Cosmetic dentistry',
-  'Other high-value treatments',
 ];
 
 // ---------------------------------------------------------------- field builders
@@ -85,51 +79,18 @@ const render = (p, list) =>
     )
     .join('\n');
 
-// ---------------------------------------------------------------- the two forms
+// ---------------------------------------------------------------- the lead form
 
-const generalFields = [
-  [
-    { kind: 'input', name: 'name', label: 'Name', autocomplete: 'name', required: true },
-    { kind: 'input', name: 'email', label: 'Work email', type: 'email', autocomplete: 'email', inputmode: 'email', required: true },
-  ],
-  [
-    { kind: 'input', name: 'company', label: 'Company', autocomplete: 'organization', required: true },
-    { kind: 'input', name: 'website', label: 'Website', autocomplete: 'url', inputmode: 'url', placeholder: 'yourcompany.com', required: true },
-  ],
+const fields = [
+  { kind: 'input', name: 'name', label: 'Name', autocomplete: 'name', required: true },
+  { kind: 'input', name: 'email', label: 'Work email', type: 'email', autocomplete: 'email', inputmode: 'email', required: true },
   { kind: 'select', name: 'industry', label: 'Industry', options: industryOptions, required: true },
-  { kind: 'textarea', name: 'offering', label: 'What does your company sell?', rows: 2, required: true },
-  {
-    kind: 'input',
-    name: 'customer_value',
-    label: 'Approximate customer value',
-    hint: 'Average revenue from a new customer. A rough estimate is fine.',
-    placeholder: 'e.g. $5,000',
-  },
-  { kind: 'checks', name: 'channels', label: 'Current acquisition channels', options: channelOptions },
-  { kind: 'textarea', name: 'challenge', label: 'Biggest growth challenge', rows: 3, required: true },
-  { kind: 'select', name: 'budget', label: 'Monthly marketing budget', options: budgetOptions },
-  { kind: 'textarea', name: 'notes', label: 'Additional information', rows: 3 },
+  { kind: 'select', name: 'budget', label: 'Marketing budget', options: budgetOptions, required: true },
 ];
 
-const dentalFields = [
-  [
-    { kind: 'input', name: 'name', label: 'Name', autocomplete: 'name', required: true },
-    { kind: 'input', name: 'email', label: 'Email', type: 'email', autocomplete: 'email', inputmode: 'email', required: true },
-  ],
-  { kind: 'input', name: 'practice', label: 'Practice name', autocomplete: 'organization', required: true },
-  [
-    { kind: 'input', name: 'location', label: 'Location', placeholder: 'City, State', required: true },
-    { kind: 'input', name: 'website', label: 'Website', autocomplete: 'url', inputmode: 'url', placeholder: 'yourpractice.com', required: true },
-  ],
-  { kind: 'checks', name: 'treatments', label: 'Main high-value treatments', options: treatmentOptions, required: true },
-  { kind: 'checks', name: 'channels', label: 'Current marketing channels', options: channelOptions },
-  { kind: 'select', name: 'budget', label: 'Approximate monthly marketing spend', options: budgetOptions },
-  { kind: 'textarea', name: 'challenge', label: 'Biggest patient acquisition challenge', rows: 3, required: true },
-];
-
-function form({ type, prefix, fields, submit, extraNote = '', hidden = false }) {
+function form({ type, prefix, fields, submit }) {
   return `
-<form class="form" data-form="${type}" action="/api/lead" method="post"${config.contactEmail ? ` data-contact-email="${esc(config.contactEmail)}"` : ''}${hidden ? ' hidden' : ''}>
+<form class="form" data-form="${type}" action="/api/lead" method="post"${config.contactEmail ? ` data-contact-email="${esc(config.contactEmail)}"` : ''}>
   <input type="hidden" name="form_type" value="${type}">
   <input type="hidden" name="page_path" value="">
   <input type="hidden" name="attribution" value="">
@@ -138,7 +99,7 @@ function form({ type, prefix, fields, submit, extraNote = '', hidden = false }) 
   ${render(prefix, fields)}
   <div class="form__actions">
     <button class="btn btn--primary btn--lg" type="submit">${esc(submit)}</button>
-    <p class="form__note">We use what you submit to respond to your request. See our <a href="/privacy">Privacy Policy</a>.${extraNote}</p>
+    <p class="form__note">We use what you submit to respond to your request. See our <a href="/privacy">Privacy Policy</a>.</p>
   </div>
   <div class="form__status" role="alert" aria-live="assertive" hidden></div>
 </form>`;
@@ -160,26 +121,13 @@ ${U.pageHero({
   <div class="container contact__grid">
     <div class="contact__form">
       <p class="form__banner" id="submit-error" role="alert">Something went wrong and your request was not sent. Please try again in a moment.</p>
-      <fieldset class="form-switch">
-        <legend class="sr-only">Which best describes you?</legend>
-        <label><input type="radio" name="form_switch" value="general" checked><span>Business</span></label>
-        <label><input type="radio" name="form_switch" value="dental"><span>Dental practice</span></label>
-      </fieldset>
-      ${form({ type: 'general', prefix: 'g', fields: generalFields, submit: 'Book a Growth Audit' })}
-      ${form({
-        type: 'dental',
-        prefix: 'd',
-        fields: dentalFields,
-        submit: 'Get a Dental Growth Audit',
-        extraNote: ' Please don’t include patient names or health information.',
-        hidden: true,
-      })}
+      ${form({ type: 'general', prefix: 'g', fields, submit: 'Get in touch' })}
     </div>
 
     <aside class="contact__aside">
       <h2>What happens next</h2>
       <ol class="next">
-        <li><h3>You tell us about the business</h3><p>The form takes a few minutes. Optional fields can be skipped.</p></li>
+        <li><h3>You tell us about the business</h3><p>Share a few details so we can understand your business and budget.</p></li>
         <li><h3>We review the growth system</h3><p>Your acquisition, conversion, follow-up and measurement, as they stand today.</p></li>
         <li><h3>We follow up with what we find</h3><p>The biggest opportunities we see, and whether Revanta is a fit.</p></li>
       </ol>

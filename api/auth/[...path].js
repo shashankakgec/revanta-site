@@ -32,13 +32,9 @@ export default async function handler(req, res) {
       body,
       redirect: 'manual',
     });
-    if (typeof upstream.headers.getSetCookie === 'function') {
-      const cookies = upstream.headers.getSetCookie().map((cookie) => cookie.replace(/;\s*Domain=[^;]+/ig, ''));
-      if (cookies.length) res.setHeader('Set-Cookie', cookies);
-    } else {
-      const cookie = upstream.headers.get('set-cookie');
-      if (cookie) res.setHeader('Set-Cookie', cookie.replace(/;\s*Domain=[^;]+/ig, ''));
-    }
+    // Avoid Headers.getSetCookie(), which throws Illegal invocation in this runtime.
+    const cookie = upstream.headers.get('set-cookie');
+    if (cookie) res.setHeader('Set-Cookie', cookie.replace(/;\s*Domain=[^;]+/ig, ''));
     for (const key of ['content-type', 'cache-control', 'www-authenticate']) {
       const value = upstream.headers.get(key);
       if (value) res.setHeader(key, value);

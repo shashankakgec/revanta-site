@@ -73,7 +73,8 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
     </div>
     <div class="portal-divider"></div>
     <p class="portal-muted" id="portal-auth-toggle-copy" style="margin-bottom:8px">Don’t have an account yet?</p>
-    <button class="portal-btn portal-btn--light" id="portal-auth-toggle" type="button">Create account</button>
+    <a class="portal-btn portal-btn--light" id="portal-auth-toggle" href="/portal?mode=signup" style="display:inline-block;text-decoration:none">Create account</a>
+    <script>(function(){var signup=new URLSearchParams(location.search).get("mode")==="signup";if(signup){var signIn=document.getElementById("portal-signin-form"),section=document.getElementById("portal-signup-section"),title=document.getElementById("portal-auth-title"),copy=document.getElementById("portal-auth-copy"),toggleCopy=document.getElementById("portal-auth-toggle-copy"),toggle=document.getElementById("portal-auth-toggle");if(signIn)signIn.hidden=true;if(section)section.hidden=false;if(title)title.textContent="Create your client account";if(copy)copy.textContent="Create an account to get started. Your projects remain private until Revanta assigns them.";if(toggleCopy)toggleCopy.textContent="Already have an account?";if(toggle){toggle.href="/portal";toggle.textContent="Sign in";}}})();</script>
   </section>
   <section class="portal-panel portal-client" id="portal-client" hidden>
     <div class="portal-card"><div class="portal-project-head"><div><div class="portal-eyebrow" style="color:#526b8d">Client overview</div><h2 id="portal-greeting">Your workspace</h2><p class="portal-muted" id="portal-account"></p></div><button class="portal-btn portal-btn--light" id="portal-signout" type="button">Sign out</button></div>

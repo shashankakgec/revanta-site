@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   const search = queryIndex >= 0 ? String(req.url).slice(queryIndex) : '';
   const host = req.headers.host;
   const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const origin = host ? proto + '://' + host : '';
+  const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');
   const headers = new Headers();
   for (const key of ['accept', 'content-type', 'cookie', 'authorization', 'user-agent']) {
     if (req.headers[key]) headers.set(key, String(req.headers[key]));

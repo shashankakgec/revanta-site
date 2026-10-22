@@ -43,6 +43,26 @@ export default {
   .dash-notes{display:block;min-width:190px;min-height:58px;padding:8px;border:1px solid #d4dce8;border-radius:8px;box-sizing:border-box}
   .dash-save{margin-top:7px;padding:8px 10px;font-size:12px}
   .dash-foot{color:#738097;font-size:12px;margin-top:16px}
+  .dash-view-toggle{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin:0 0 12px}
+  .dash-view-btn{border:1px solid #d4dce8;border-radius:9px;background:#fff;color:#43536d;padding:9px 13px;font-weight:700;cursor:pointer}
+  .dash-view-btn[aria-pressed="true"]{background:#142b50;color:#fff;border-color:#142b50}
+  .dash-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .dash-lead-card{background:#fff;border:1px solid #e1e7f0;border-radius:14px;padding:18px;box-shadow:0 8px 28px #12234208;min-width:0}
+  .dash-lead-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .dash-lead-card h3{font-size:17px;margin:0 0 5px;overflow-wrap:anywhere}
+  .dash-pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;background:#edf2f8;color:#40516d;white-space:nowrap}
+  .dash-lead-meta{color:#66748a;font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+  .dash-lead-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+  .dash-lead-details span{display:block;color:#718096;font-size:11px;margin-bottom:4px}
+  .dash-lead-details strong{display:block;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+  .dash-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .dash-card-actions label{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px}
+  .dash-card-actions .dash-cell-select,.dash-card-actions .dash-date{box-sizing:border-box;width:100%;min-width:0}
+  .dash-card-notes{margin-top:12px}
+  .dash-card-notes label{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px}
+  .dash-card-notes .dash-notes{width:100%;box-sizing:border-box;min-width:0}
+  .dash-card-save{margin-top:10px}
+  @media(max-width:720px){.dash-cards{grid-template-columns:1fr}.dash-view-toggle{justify-content:flex-start}.dash-lead-details{gap:10px}}
   @media(max-width:720px){.dash-wrap{padding:22px 14px 50px}.dash-top{align-items:flex-start}.dash-toolbar{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card{padding:18px}}
 </style>
 <div class="dash-wrap">
@@ -62,8 +82,13 @@ export default {
       <div class="dash-stat"><span>Won</span><strong id="stat-won">—</strong></div>
     </div>
     <div class="dash-toolbar"><input class="dash-input" id="dash-search" placeholder="Search name, email, industry…" aria-label="Search leads"><select class="dash-select" id="dash-filter" aria-label="Filter by status"><option value="">All statuses</option><option>New</option><option>Contacted</option><option>Meeting Booked</option><option>Won</option><option>Lost</option></select></div>
+    <div class="dash-view-toggle" role="group" aria-label="Choose lead display">
+      <button class="dash-view-btn" id="dash-table-view" type="button" aria-pressed="true">☷ Table view</button>
+      <button class="dash-view-btn" id="dash-card-view" type="button" aria-pressed="false">▦ Card view</button>
+    </div>
     <div id="dash-status" class="dash-message" role="status">Loading leads…</div>
     <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
+    <div id="dash-cards" class="dash-cards" hidden></div>
     <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the authorised account.</p>
   </section>
 </div>
@@ -82,6 +107,11 @@ export default {
   var signout = document.getElementById('dash-signout');
   var statusEl = document.getElementById('dash-status');
   var rowsEl = document.getElementById('dash-rows');
+  var tableWrap = document.querySelector('.dash-table-wrap');
+  var cardsEl = document.getElementById('dash-cards');
+  var tableViewBtn = document.getElementById('dash-table-view');
+  var cardViewBtn = document.getElementById('dash-card-view');
+  var viewMode = 'table';
   var allLeads = [];
   if (!window.supabase || !window.supabase.createClient) {
     loginMessage.textContent = 'The sign-in library did not load. Check your connection and reload.';
@@ -112,6 +142,22 @@ export default {
       return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+esc(x.email||'')+'</div>'+(x.company?'<div class="dash-muted">'+esc(x.company)+'</div>':'')+'</td><td><div>'+esc(x.industry||'—')+'</div><div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div><div class="dash-muted">'+esc(x.form_type||'')+'</div></td><td>'+esc(dateLabel(x.created_at))+'<div class="dash-muted">'+esc(x.page_path||'')+'</div></td><td><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" aria-label="Internal notes" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td></tr>';
     }).join('');
     if(!visible.length) rowsEl.innerHTML='<tr><td colspan="6" style="padding:24px;color:#6c7890">No leads match this search.</td></tr>';
+    cardsEl.innerHTML=visible.map(function(x){
+      var d=x.follow_up_at?new Date(x.follow_up_at):null;
+      var localDate=d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
+      return '<article class="dash-lead-card" data-id="'+esc(x.id)+'">'+
+        '<div class="dash-lead-card-top"><div><h3>'+esc(x.name||'Unnamed')+'</h3><div class="dash-lead-meta">'+esc(x.email||'No email provided')+'</div>'+(x.company?'<div class="dash-lead-meta">'+esc(x.company)+'</div>':'')+'</div><span class="dash-pill">'+esc(x.status||'New')+'</span></div>'+
+        '<div class="dash-lead-details"><div><span>Industry</span><strong>'+esc(x.industry||'—')+'</strong></div><div><span>Budget</span><strong>'+esc(x.budget||'—')+'</strong></div><div><span>Enquiry type</span><strong>'+esc(x.form_type||'—')+'</strong></div><div><span>Submitted</span><strong>'+esc(dateLabel(x.created_at))+'</strong></div></div>'+
+        '<div class="dash-lead-meta">Source page: '+esc(x.page_path||'—')+'</div>'+
+        '<div class="dash-card-actions"><div><label>Status</label><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(st){return '<option'+((x.status||'New')===st?' selected':'')+'>'+st+'</option>';}).join('')+'</select></div><div><label>Follow-up</label><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></div></div>'+
+        '<div class="dash-card-notes"><label>Internal notes</label><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" aria-label="Internal notes" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save dash-card-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></div>'+
+        '</article>';
+    }).join('');
+    if(!visible.length) cardsEl.innerHTML='<div class="dash-card" style="grid-column:1/-1;color:#6c7890">No leads match this search.</div>';
+    tableWrap.hidden=viewMode!=='table';
+    cardsEl.hidden=viewMode!=='cards';
+    tableViewBtn.setAttribute('aria-pressed',viewMode==='table'?'true':'false');
+    cardViewBtn.setAttribute('aria-pressed',viewMode==='cards'?'true':'false');
     message(statusEl,'Showing '+visible.length+' of '+allLeads.length+' leads.',false);
   }
   async function loadLeads(){
@@ -140,9 +186,10 @@ export default {
   signout.addEventListener('click',async function(){await client.auth.signOut();showLoggedOut('You have signed out.');});
   document.getElementById('dash-search').addEventListener('input',render);
   document.getElementById('dash-filter').addEventListener('change',render);
-  rowsEl.addEventListener('click',async function(e){
-    var button=e.target.closest('[data-save]');if(!button)return;
-    var row=button.closest('tr');var id=row.getAttribute('data-id');
+  tableViewBtn.addEventListener('click',function(){viewMode='table';render();});
+  cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});
+  function saveLeadFromRow(button){
+    var row=button.closest('[data-id]');var id=row.getAttribute('data-id');
     var status=row.querySelector('[data-field="status"]').value;
     var follow=row.querySelector('[data-field="follow_up_at"]').value;
     var notes=row.querySelector('[data-field="internal_notes"]').value.trim();
@@ -155,6 +202,12 @@ export default {
     var lead=allLeads.find(function(x){return String(x.id)===String(id);});
     if(lead){lead.status=result.data.status;lead.follow_up_at=result.data.follow_up_at;lead.internal_notes=result.data.internal_notes;}
     message(msg,'Saved',false);render();
+  }
+  rowsEl.addEventListener('click',async function(e){
+    var button=e.target.closest('[data-save]');if(button) await saveLeadFromRow(button);
+  });
+  cardsEl.addEventListener('click',async function(e){
+    var button=e.target.closest('[data-save]');if(button) await saveLeadFromRow(button);
   });
   client.auth.onAuthStateChange(function(event,session){
     if(event==='SIGNED_OUT'){showLoggedOut();}

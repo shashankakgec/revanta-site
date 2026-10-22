@@ -25,7 +25,8 @@ export default async function handler(req, res) {
     });
     if (!auth.ok) return res.status(401).json({ error: 'unauthorised' });
     const payload = await auth.json().catch(() => ({}));
-    const user = payload.user || payload.data?.user || payload.session?.user || payload.data?.session?.user;
+    const safePayload = payload && typeof payload === 'object' ? payload : {};
+    const user = safePayload.user || safePayload.data?.user || safePayload.session?.user || safePayload.data?.session?.user;
     if (!user || !user.email) return res.status(401).json({ error: 'unauthorised' });
     if (!ALLOWED.has(String(user.email || '').toLowerCase())) return res.status(403).json({ error: 'forbidden' });
     if (!process.env.NEON_DATABASE_URL) return res.status(503).json({ error: 'database_not_configured' });

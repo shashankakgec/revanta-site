@@ -49,24 +49,29 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
   <div class="portal-top"><a class="portal-brand" href="/">REVANTA</a><a href="/">Back to website ↗</a></div>
   <section class="portal-hero"><div class="portal-eyebrow">Revanta · Client workspace</div><h1>Your project, clearly in view.</h1><p>Sign in to track project progress, review preview links, and open your live website when it is ready. Project access is granted individually by the Revanta team.</p></section>
   <section class="portal-card portal-auth" id="portal-auth">
-    <div class="portal-grid">
-      <section class="portal-card" aria-labelledby="portal-signup-title"><h2 id="portal-signup-title">Create account</h2><p class="portal-muted">Create your client account. Your projects remain private until Revanta assigns them.</p>
-        <form id="portal-signup-form">
-          <label class="portal-label" for="portal-name">Your name</label><input class="portal-input" id="portal-name" autocomplete="name" required maxlength="100" placeholder="Full name">
-          <label class="portal-label" for="portal-business">Business name</label><input class="portal-input" id="portal-business" autocomplete="organization" required maxlength="150" placeholder="Your business">
-          <label class="portal-label" for="portal-signup-email">ID (email address)</label><input class="portal-input" id="portal-signup-email" type="email" autocomplete="email" required maxlength="254" placeholder="you@company.com">
-          <label class="portal-label" for="portal-signup-password">Password</label><input class="portal-input" id="portal-signup-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" placeholder="At least 8 characters">
-          <div class="portal-actions"><button class="portal-btn" id="portal-signup-submit" type="submit">Create account</button></div><p class="portal-msg" id="portal-signup-message" role="status" aria-live="polite"></p>
-        </form>
-      </section>
-      <section class="portal-card" aria-labelledby="portal-signin-title"><h2 id="portal-signin-title">Sign in</h2><p class="portal-muted">Already registered? Sign in with your ID and password.</p>
-        <form id="portal-signin-form">
-          <label class="portal-label" for="portal-signin-email">ID (email address)</label><input class="portal-input" id="portal-signin-email" type="email" autocomplete="username" required maxlength="254" placeholder="you@company.com">
-          <label class="portal-label" for="portal-signin-password">Password</label><input class="portal-input" id="portal-signin-password" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="Your password">
-          <div class="portal-actions"><button class="portal-btn" id="portal-signin-submit" type="submit">Sign in</button></div><p class="portal-msg" id="portal-signin-message" role="status" aria-live="polite"></p>
-        </form>
-      </section>
+    <h2 id="portal-auth-title">Sign in</h2>
+    <p class="portal-muted" id="portal-auth-copy">Sign in with your email ID and password to view your Revanta projects.</p>
+    <form id="portal-signin-form">
+      <label class="portal-label" for="portal-signin-email">ID (email address)</label><input class="portal-input" id="portal-signin-email" type="email" autocomplete="username" required maxlength="254" placeholder="you@company.com">
+      <label class="portal-label" for="portal-signin-password">Password</label><input class="portal-input" id="portal-signin-password" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="Your password">
+      <div class="portal-actions"><button class="portal-btn" id="portal-signin-submit" type="submit">Sign in</button></div>
+      <p class="portal-msg" id="portal-signin-message" role="status" aria-live="polite"></p>
+    </form>
+    <div id="portal-signup-section" hidden>
+      <div class="portal-divider"></div><h2>Create account</h2>
+      <p class="portal-muted">Create your client account. Your projects remain private until Revanta assigns them.</p>
+      <form id="portal-signup-form">
+        <label class="portal-label" for="portal-name">Your name</label><input class="portal-input" id="portal-name" autocomplete="name" required maxlength="100" placeholder="Full name">
+        <label class="portal-label" for="portal-business">Business name</label><input class="portal-input" id="portal-business" autocomplete="organization" required maxlength="150" placeholder="Your business">
+        <label class="portal-label" for="portal-signup-email">ID (email address)</label><input class="portal-input" id="portal-signup-email" type="email" autocomplete="email" required maxlength="254" placeholder="you@company.com">
+        <label class="portal-label" for="portal-signup-password">Password</label><input class="portal-input" id="portal-signup-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" placeholder="At least 8 characters">
+        <div class="portal-actions"><button class="portal-btn" id="portal-signup-submit" type="submit">Create account</button></div>
+        <p class="portal-msg" id="portal-signup-message" role="status" aria-live="polite"></p>
+      </form>
     </div>
+    <div class="portal-divider"></div>
+    <p class="portal-muted" id="portal-auth-toggle-copy" style="margin-bottom:8px">Don’t have an account yet?</p>
+    <button class="portal-btn portal-btn--light" id="portal-auth-toggle" type="button">Create account</button>
   </section>
   <section class="portal-panel portal-client" id="portal-client" hidden>
     <div class="portal-card"><div class="portal-project-head"><div><div class="portal-eyebrow" style="color:#526b8d">Client overview</div><h2 id="portal-greeting">Your workspace</h2><p class="portal-muted" id="portal-account"></p></div><button class="portal-btn portal-btn--light" id="portal-signout" type="button">Sign out</button></div>

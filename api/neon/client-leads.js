@@ -1,8 +1,22 @@
 import { neon } from '@neondatabase/serverless';
-const authUrl = process.env.NEON_AUTH_URL;
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+const authIssuer = process.env.NEON_AUTH_BASE_URL;
+const jwksUrl = process.env.NEON_AUTH_JWKS_URL;
+let jwks;
 function send(res,status,body){res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');return res.status(status).json(body)}
 function sameOrigin(req){if(!req.headers.origin)return true;try{return new URL(req.headers.origin).host===req.headers.host}catch{return false}}
-async function session(req){if(!authUrl)throw new Error('Neon Auth is not configured.');const cookie=req.headers.cookie||'';if(!cookie)return null;const r=await fetch(authUrl.replace(/\/$/,'')+'/get-session',{headers:{cookie,accept:'application/json'},cache:'no-store'});if(!r.ok)return null;const d=await r.json().catch(()=>null);const u=d&&(d.user||(d.data&&d.data.user));return u&&u.id&&u.email?{id:u.id,email:String(u.email).toLowerCase(),name:u.name||''}:null}
+async function session(req){
+ const h=String(req.headers.authorization||'');
+ if(!h.startsWith('Bearer '))return null;
+ if(!authIssuer||!jwksUrl)throw new Error('Neon Auth JWT verification is not configured.');
+ try{
+  if(!jwks)jwks=createRemoteJWKSet(new URL(jwksUrl));
+  const {payload}=await jwtVerify(h.slice(7),jwks,{issuer:new URL(authIssuer).origin});
+  const id=payload.sub;
+  if(typeof id!=='string'||!id)return null;
+  return {id,email:typeof payload.email==='string'?payload.email.toLowerCase():''};
+ }catch{return null}
+}
 export default async function handler(req,res){
  if(!sameOrigin(req))return send(res,403,{error:'forbidden'});
  if(req.method!=='GET'){res.setHeader('Allow','GET');return send(res,405,{error:'method_not_allowed'})}
@@ -14,6 +28,6 @@ export default async function handler(req,res){
   if(!projects.length)return send(res,200,{user,leads:[],project_assigned:false});
   const ids=projects.map(p=>p.id);
   const leads=await sql`SELECT l.id,l.name,l.email,l.industry,l.budget,l.form_type,l.created_at,l.page_path,l.status FROM public.leads l WHERE l.client_project_id = ANY(${ids}::uuid[]) ORDER BY l.created_at DESC LIMIT 500`;
-  return send(res,200,{user,leads,project_assigned:true});
+  return send(res,200,{user,leads,project_assigned:true,projects});
  }catch(e){console.error('[client leads api]',e&&e.message);return send(res,500,{error:'dashboard_request_failed'})}
 }

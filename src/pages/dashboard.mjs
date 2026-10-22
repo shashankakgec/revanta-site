@@ -145,13 +145,10 @@ export default {
     <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the two approved accounts.</p>
   </section>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-(function(){
+(async function(){
   'use strict';
   var APPROVED_EMAILS = ['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in'];
-  var SUPABASE_URL = 'https://zedwounhjhfiuystjfhr.supabase.co';
-  var SUPABASE_KEY = 'sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo';
   var login=document.getElementById('dash-login'), app=document.getElementById('dash-app');
   var loginForm=document.getElementById('dash-login-form'), loginMessage=document.getElementById('dash-login-message');
   var loginButton=document.getElementById('dash-login-btn'), signout=document.getElementById('dash-signout');
@@ -168,19 +165,15 @@ export default {
   function setTheme(theme){var dark=theme==='dark';document.body.classList.toggle('dark-mode',dark);themeToggle.textContent=dark?'☀':'☾';themeToggle.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');try{localStorage.setItem('revanta-dashboard-theme',theme);}catch(e){}}
   try{setTheme(localStorage.getItem('revanta-dashboard-theme')||'light');}catch(e){setTheme('light');}
   themeToggle.addEventListener('click',function(){setTheme(document.body.classList.contains('dark-mode')?'light':'dark');});
-  if(!window.supabase||!window.supabase.createClient){msg(loginMessage,'Sign-in library failed to load. Reload and try again.',true);return;}
-  var authClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+  var authClient=null;
   async function api(path,options){
-    var sessionResult=await authClient.auth.getSession();
-    var session=sessionResult.data&&sessionResult.data.session;
-    if(!session)throw new Error('Your session expired. Please sign in again.');
     options=options||{};
-    var headers=Object.assign({Authorization:'Bearer '+session.access_token},options.headers||{});
-    var requestOptions=Object.assign({},options,{method:options.method||'GET',headers:headers});
+    var headers=Object.assign({},options.headers||{});
+    var requestOptions=Object.assign({},options,{method:options.method||'GET',headers:headers,credentials:'same-origin'});
     var response=await fetch(path,requestOptions);
     var data=await response.json().catch(function(){return {};});
-    if(response.status===401){await authClient.auth.signOut();throw new Error('Your session expired. Please sign in again.');}
-    if(!response.ok)throw new Error(data.error==='database_not_configured'?'Neon is not configured for this preview.':data.error==='forbidden'?'This account is not authorised.':'Request failed ('+response.status+').');
+    if(response.status===401){if(authClient)await authClient.signOut();throw new Error('Your session expired. Please sign in again.');}
+    if(!response.ok)throw new Error(data.error==='database_not_configured'?'Neon database is not configured for this preview.':data.error==='auth_not_configured'?'Neon Auth is not configured for this preview.':data.error==='forbidden'?'This account is not authorised.':'Request failed ('+response.status+').');
     return data;
   }
   function taskKind(x){if(!x.follow_up_at||x.status==='Won'||x.status==='Lost')return '';var d=new Date(x.follow_up_at),now=new Date();if(isNaN(d.getTime()))return '';var today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),week=new Date(today.getTime()+7*86400000);if(d<today)return 'overdue';if(d<tomorrow)return 'today';if(d<week)return 'upcoming';return '';}
@@ -208,9 +201,26 @@ export default {
     msg(statusEl,'Showing '+visible.length+' of '+allLeads.length+' leads.',false);
   }
   async function loadLeads(){msg(statusEl,'Loading leads from Neon…',false);try{var data=await api('/api/dashboard-leads');allLeads=data.leads||[];render();}catch(e){msg(statusEl,e.message,true);}}
-  async function verifySession(){var r=await authClient.auth.getSession(),user=r.data&&r.data.session&&r.data.session.user;if(!user){showOut();return;}if(!APPROVED_EMAILS.includes(String(user.email||'').toLowerCase())){await authClient.auth.signOut();showOut('This account is not authorised for the Revanta dashboard.');return;}showIn();await loadLeads();}
-  loginForm.addEventListener('submit',async function(e){e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';var result=await authClient.auth.signInWithPassword({email:document.getElementById('dash-email').value.trim().toLowerCase(),password:document.getElementById('dash-password').value});if(result.error)msg(loginMessage,'Could not sign in: '+result.error.message,true);else{document.getElementById('dash-password').value='';await verifySession();}loginButton.disabled=false;loginButton.textContent='Sign in';});
-  signout.addEventListener('click',async function(){await authClient.auth.signOut();showOut('You have signed out.');});
+  async function verifySession(){
+    var r=await authClient.getSession();
+    var data=r&&r.data;
+    var user=data&&(data.user||(data.session&&data.session.user));
+    if(!user){showOut();return;}
+    if(!APPROVED_EMAILS.includes(String(user.email||'').toLowerCase())){
+      await authClient.signOut();showOut('This account is not authorised for the Revanta dashboard.');return;
+    }
+    showIn();await loadLeads();
+  }
+  loginForm.addEventListener('submit',async function(e){
+    e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';
+    try{
+      var result=await authClient.signIn.email({email:document.getElementById('dash-email').value.trim().toLowerCase(),password:document.getElementById('dash-password').value});
+      if(result&&result.error)msg(loginMessage,'Could not sign in: '+(result.error.message||'Please check your email and password.'),true);
+      else{document.getElementById('dash-password').value='';await verifySession();}
+    }catch(error){msg(loginMessage,error.message||'Could not sign in. Please try again.',true);}
+    finally{loginButton.disabled=false;loginButton.textContent='Sign in';}
+  });
+  signout.addEventListener('click',async function(){try{await authClient.signOut();showOut('You have signed out.');}catch(e){showOut('Sign-out failed. Please reload the page.');}});
   document.getElementById('dash-search').addEventListener('input',render);document.getElementById('dash-filter').addEventListener('change',render);
   document.querySelectorAll('[data-task-filter]').forEach(function(b){b.addEventListener('click',function(){taskFilter=taskFilter===b.getAttribute('data-task-filter')?'':b.getAttribute('data-task-filter');render();});});
   document.getElementById('dash-followup-reset').addEventListener('click',function(){taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();});
@@ -218,8 +228,12 @@ export default {
   tableViewBtn.addEventListener('click',function(){viewMode='table';render();});cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});
   async function saveLead(button){var row=button.closest('[data-id]'),id=row.getAttribute('data-id'),status=row.querySelector('[data-field="status"]').value,follow=row.querySelector('[data-field="follow_up_at"]').value,notes=row.querySelector('[data-field="internal_notes"]').value.trim(),label=row.querySelector('[data-row-message]');button.disabled=true;button.textContent='Saving…';try{var data=await api('/api/dashboard-leads',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,status:status,follow_up_at:follow?new Date(follow).toISOString():null,internal_notes:notes})});var lead=allLeads.find(function(x){return String(x.id)===String(id)});if(lead){lead.status=data.lead.status;lead.follow_up_at=data.lead.follow_up_at;lead.internal_notes=data.lead.internal_notes;}msg(label,'Saved to Neon.',false);render();}catch(e){msg(label,'Not saved: '+e.message,true);button.disabled=false;button.textContent='Save changes';}}
   rowsEl.addEventListener('click',function(e){var b=e.target.closest('[data-save]');if(b)saveLead(b);});cardsEl.addEventListener('click',function(e){var b=e.target.closest('[data-save]');if(b)saveLead(b);});
-  authClient.auth.onAuthStateChange(function(event){if(event==='SIGNED_OUT')showOut();});
-  verifySession();
+  try{
+    var authModule=await import('https://esm.sh/@neondatabase/auth@latest');
+    if(!authModule.createAuthClient)throw new Error('Neon Auth client did not load.');
+    authClient=authModule.createAuthClient(window.location.origin+'/api/auth');
+    await verifySession();
+  }catch(error){showOut('Neon Auth could not initialize: '+(error.message||'Please reload and try again.'));}
 })();
 </script>
 `,

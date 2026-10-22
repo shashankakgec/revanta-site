@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
   try {
-    const authUrl = String(process.env.NEON_AUTH_URL || '').replace(/\\/+$/, '');
+    const authUrl = String(process.env.NEON_AUTH_URL || '').replace(/\/+$/, '');
     if (!authUrl) return res.status(503).json({ error: 'auth_not_configured' });
     const host = req.headers.host || '';
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();

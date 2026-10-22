@@ -10,6 +10,7 @@ import contact from './contact.mjs';
 import thanks from './thanks.mjs';
 import privacy from './privacy.mjs';
 import dashboard from './dashboard.mjs';
+import portal from './portal.mjs';
 import notFound from './not-found.mjs';
 
-export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, notFound];
+export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, portal, notFound];

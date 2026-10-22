@@ -48,7 +48,7 @@ async function build() {
   const assets = { css: '', js: {} };
   const css = minifyCss(await readFile(path.join(SRC, 'assets/css/styles.css'), 'utf8'));
   assets.css = await emit('css', 'styles', 'css', css);
-  for (const name of ['analytics', 'main', 'form']) {
+  for (const name of ['analytics', 'main', 'form', 'client-portal']) {
     assets.js[name] = await emit('js', name, 'js', await readFile(path.join(SRC, `assets/js/${name}.js`), 'utf8'));
   }
 

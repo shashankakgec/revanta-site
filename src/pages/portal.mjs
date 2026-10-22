@@ -72,7 +72,7 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
     </div>
     <div class="portal-divider"></div>
     <p class="portal-muted" id="portal-auth-toggle-copy" style="margin-bottom:8px">Don’t have an account yet?</p>
-    <button class="portal-btn portal-btn--light" id="portal-auth-toggle" type="button">Create account</button>
+    <button class="portal-btn portal-btn--light" id="portal-auth-toggle" type="button" onclick="var s=document.getElementById('portal-signup-section'),f=document.getElementById('portal-signin-form'),v=s.hidden;s.hidden=!v;f.hidden=v;document.getElementById('portal-auth-title').textContent=v?'Create your client account':'Sign in';document.getElementById('portal-auth-copy').textContent=v?'Create an account to get started. Your projects remain private until Revanta assigns them.':'Sign in with your email ID and password to view your Revanta projects.';document.getElementById('portal-auth-toggle-copy').textContent=v?'Already have an account?':'Don’t have an account yet?';this.textContent=v?'Sign in':'Create account';['portal-name','portal-business','portal-signup-email','portal-signup-password'].forEach(function(id){var e=document.getElementById(id);e.disabled=!v;e.required=v})">Create account</button>
   </section>
   <section class="portal-panel portal-client" id="portal-client" hidden>
     <div class="portal-card"><div class="portal-project-head"><div><div class="portal-eyebrow" style="color:#526b8d">Client overview</div><h2 id="portal-greeting">Your workspace</h2><p class="portal-muted" id="portal-account"></p></div><button class="portal-btn portal-btn--light" id="portal-signout" type="button">Sign out</button></div>

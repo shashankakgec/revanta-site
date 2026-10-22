@@ -15,7 +15,6 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(ROOT, 'src');
 const OUT = path.join(ROOT, 'dist');
 
-// Conservative CSS minifier: strips comments and redundant whitespace only.
 const minifyCss = (css) =>
   css
     .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -24,7 +23,6 @@ const minifyCss = (css) =>
     .replace(/;}/g, '}')
     .trim();
 
-/** Write a content-hashed asset so it can be cached forever. Returns its public URL. */
 async function emit(kind, name, ext, content) {
   const hash = createHash('md5').update(content).digest('hex').slice(0, 10);
   const rel = `assets/${kind}/${name}.${hash}.${ext}`;
@@ -40,19 +38,15 @@ async function build() {
   const started = Date.now();
   await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
-
-  // 1. Static files (favicon, og-image, manifest...) are copied to the site root.
   await cp(path.join(ROOT, 'public'), OUT, { recursive: true });
 
-  // 2. Hashed assets.
   const assets = { css: '', js: {} };
   const css = minifyCss(await readFile(path.join(SRC, 'assets/css/styles.css'), 'utf8'));
   assets.css = await emit('css', 'styles', 'css', css);
-  for (const name of ['analytics', 'main', 'form', 'client-portal']) {
+  for (const name of ['analytics', 'main', 'form', 'client-portal', 'neon-portal']) {
     assets.js[name] = await emit('js', name, 'js', await readFile(path.join(SRC, `assets/js/${name}.js`), 'utf8'));
   }
 
-  // 3. Pages (registry + generated case study pages).
   const all = [...pages, ...caseStudies.map(caseStudyPage)];
   const seen = new Set();
   const year = new Date().getFullYear();
@@ -64,7 +58,6 @@ async function build() {
     await writeFile(file, renderDocument(page, assets, { year }));
   }
 
-  // 4. sitemap.xml and robots.txt
   const today = new Date().toISOString().slice(0, 10);
   const indexable = all.filter((p) => !p.noindex && p.path !== '/404');
   const sitemap =
@@ -78,7 +71,6 @@ async function build() {
     : `User-agent: *\nDisallow: /\n`;
   await writeFile(path.join(OUT, 'robots.txt'), robots);
 
-  // 5. Summary
   console.log(`Built ${all.length} pages in ${Date.now() - started}ms -> dist/`);
   console.log(`  site url:   ${config.url}${isProduction ? '' : '  (non-production build: noindex + robots disallow)'}`);
   console.log(`  indexable:  ${indexable.length} pages in sitemap.xml`);

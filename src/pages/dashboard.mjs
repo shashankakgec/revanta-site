@@ -28,6 +28,21 @@ export default {
   .dash-error{color:#a62c38}
   .dash-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 220px;gap:12px;margin:22px 0}
   .dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+  .dash-followup-panel{background:#fff;border:1px solid #e1e7f0;border-radius:16px;padding:22px;margin:22px 0;box-shadow:0 8px 28px #1223420a}
+  .dash-followup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .dash-followup-head h2{font-size:22px;letter-spacing:-.03em;margin:7px 0}
+  .dash-followup-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+  .dash-followup-stat{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;padding:15px;border:1px solid #e1e7f0;border-radius:12px;background:#f8faff;color:#142b50;cursor:pointer}
+  .dash-followup-stat[aria-pressed="true"]{border-color:#315b98;box-shadow:inset 0 0 0 1px #315b98}
+  .dash-followup-stat span{font-size:12px;color:#64748b;font-weight:700}
+  .dash-followup-stat strong{font-size:26px;letter-spacing:-.04em}
+  .dash-followup-stat small{font-size:11px;color:#64748b}
+  .dash-followup-list{display:grid;gap:8px}
+  .dash-followup-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #edf0f5;border-radius:10px}
+  .dash-followup-item strong{display:block;font-size:13px;overflow-wrap:anywhere}
+  .dash-followup-item p{margin:4px 0 0;font-size:12px;color:#64748b;line-height:1.5}
+  .dash-followup-item button{flex-shrink:0}
+  .dash-followup-empty{padding:14px;border-radius:10px;background:#f8faff;color:#64748b;font-size:13px}
   .dash-stat{background:#fff;border:1px solid #e1e7f0;border-radius:13px;padding:16px}
   .dash-stat span{display:block;color:#66748a;font-size:12px;margin-bottom:8px}
   .dash-stat strong{font-size:25px;letter-spacing:-.04em}
@@ -75,6 +90,13 @@ export default {
   body.page-dashboard.dark-mode .dash-theme-btn,body.page-dashboard.dark-mode .dash-view-btn{background:#17243a;color:#cbd5e1;border-color:#35445d}
   body.page-dashboard.dark-mode .dash-view-btn[aria-pressed="true"]{background:#dbeafe;color:#142b50;border-color:#dbeafe}
   body.page-dashboard.dark-mode .dash-table-wrap{background:#141e30;border-color:#2a3850}
+  body.page-dashboard.dark-mode .dash-followup-panel{background:#141e30;border-color:#2a3850;box-shadow:0 8px 28px #00000020}
+  body.page-dashboard.dark-mode .dash-followup-stat{background:#17243a;color:#e5eaf3;border-color:#35445d}
+  body.page-dashboard.dark-mode .dash-followup-stat span,body.page-dashboard.dark-mode .dash-followup-stat small{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-followup-stat[aria-pressed="true"]{border-color:#93c5fd;box-shadow:inset 0 0 0 1px #93c5fd}
+  body.page-dashboard.dark-mode .dash-followup-item{border-color:#26354b}
+  body.page-dashboard.dark-mode .dash-followup-item p{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-followup-empty{background:#17243a;color:#a8b4c8}
   body.page-dashboard.dark-mode .dash-table th{background:#1a2940;color:#a8b7ce}
   body.page-dashboard.dark-mode .dash-table th,body.page-dashboard.dark-mode .dash-table td{border-bottom-color:#26354b}
   body.page-dashboard.dark-mode .dash-name{color:#f1f5fb}
@@ -83,7 +105,7 @@ export default {
   body.page-dashboard.dark-mode .dash-pill{background:#263650;color:#dbeafe}
   body.page-dashboard.dark-mode .dash-foot{color:#8999b2}
   @media(max-width:720px){.dash-cards{grid-template-columns:1fr}.dash-view-toggle{justify-content:flex-start}.dash-lead-details{gap:10px}}
-  @media(max-width:720px){.dash-wrap{padding:22px 14px 50px}.dash-top{align-items:flex-start}.dash-toolbar{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card{padding:18px}}
+  @media(max-width:720px){.dash-wrap{padding:22px 14px 50px}.dash-top{align-items:flex-start}.dash-toolbar{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card{padding:18px}.dash-followup-panel{padding:16px}.dash-followup-head{flex-direction:column}.dash-followup-stats{gap:8px}.dash-followup-stat{padding:11px}.dash-followup-stat strong{font-size:22px}.dash-followup-item{align-items:flex-start}.dash-followup-item button{white-space:nowrap}}
 </style>
 <div class="dash-wrap">
   <div class="dash-top"><div><div class="dash-brand">REVANTA</div><div class="dash-eyebrow" style="margin-top:8px">Private workspace</div></div><div class="dash-top-actions"><button class="dash-theme-btn" id="dash-theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button><button class="dash-btn dash-btn--light" id="dash-signout" hidden>Sign out</button></div></div>
@@ -95,6 +117,16 @@ export default {
   </section>
   <section id="dash-app" hidden>
     <div class="dash-eyebrow">Revanta / Operations</div><h1>Lead dashboard</h1><p class="dash-sub">Review enquiries, track progress and keep follow-ups in one place.</p>
+    <section class="dash-followup-panel" aria-labelledby="dash-followup-heading">
+      <div class="dash-followup-head"><div><div class="dash-eyebrow">Daily action list</div><h2 id="dash-followup-heading">Follow-up centre</h2><p class="dash-sub">See who needs attention next. Schedule follow-ups in each lead's row or card.</p></div><button class="dash-btn dash-btn--light" id="dash-followup-reset" type="button">Show all leads</button></div>
+      <div class="dash-followup-stats">
+        <button type="button" class="dash-followup-stat" data-task-filter="overdue"><span>Overdue</span><strong id="followup-overdue">—</strong><small>Needs attention</small></button>
+        <button type="button" class="dash-followup-stat" data-task-filter="today"><span>Due today</span><strong id="followup-today">—</strong><small>Scheduled for today</small></button>
+        <button type="button" class="dash-followup-stat" data-task-filter="upcoming"><span>Upcoming</span><strong id="followup-upcoming">—</strong><small>Next 7 days</small></button>
+      </div>
+      <div class="dash-followup-list" id="dash-followup-list"><p class="dash-message">Loading follow-ups…</p></div>
+      <p class="dash-foot">Closed leads (Won or Lost) are excluded. Follow-up times use your device's local time.</p>
+    </section>
     <div class="dash-stats">
       <div class="dash-stat"><span>Total leads</span><strong id="stat-total">—</strong></div>
       <div class="dash-stat"><span>New</span><strong id="stat-new">—</strong></div>
@@ -148,6 +180,7 @@ export default {
   var cardViewBtn = document.getElementById('dash-card-view');
   var viewMode = 'table';
   var allLeads = [];
+  var taskFilter = '';
   if (!window.supabase || !window.supabase.createClient) {
     loginMessage.textContent = 'The sign-in library did not load. Check your connection and reload.';
     loginMessage.classList.add('dash-error'); return;
@@ -163,9 +196,33 @@ export default {
   function render(){
     var q=document.getElementById('dash-search').value.trim().toLowerCase();
     var filter=document.getElementById('dash-filter').value;
+    var now=new Date();
+    var startToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    var startTomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+    var nextWeek=new Date(startToday.getTime()+7*24*60*60*1000);
+    function activeLead(x){return x.status!=='Won'&&x.status!=='Lost';}
+    function taskKind(x){
+      if(!x.follow_up_at||!activeLead(x)) return '';
+      var d=new Date(x.follow_up_at); if(isNaN(d.getTime())) return '';
+      if(d<startToday) return 'overdue';
+      if(d>=startToday&&d<startTomorrow) return 'today';
+      if(d>=startTomorrow&&d<nextWeek) return 'upcoming';
+      return '';
+    }
+    var dueLeads=allLeads.filter(function(x){return !!taskKind(x);}).sort(function(a,b){return new Date(a.follow_up_at)-new Date(b.follow_up_at);});
+    document.getElementById('followup-overdue').textContent=dueLeads.filter(function(x){return taskKind(x)==='overdue';}).length;
+    document.getElementById('followup-today').textContent=dueLeads.filter(function(x){return taskKind(x)==='today';}).length;
+    document.getElementById('followup-upcoming').textContent=dueLeads.filter(function(x){return taskKind(x)==='upcoming';}).length;
+    document.querySelectorAll('[data-task-filter]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-task-filter')===taskFilter?'true':'false');});
+    var taskList=document.getElementById('dash-followup-list');
+    var priority=dueLeads.filter(function(x){return taskFilter?taskKind(x)===taskFilter:true;}).slice(0,5);
+    taskList.innerHTML=priority.length?priority.map(function(x){
+      var kind=taskKind(x);var label=kind==='overdue'?'Overdue':kind==='today'?'Due today':'Upcoming';
+      return '<div class="dash-followup-item"><div><strong>'+esc(x.name||'Unnamed lead')+'</strong><p>'+esc(x.email||x.company||'No contact details')+' · '+esc(label)+' · '+esc(dateLabel(x.follow_up_at))+'</p></div><button type="button" class="dash-btn dash-btn--light" data-open-lead="'+esc(x.id)+'">Open lead</button></div>';
+    }).join(''):'<div class="dash-followup-empty">'+(taskFilter?'No leads in this follow-up group.':'No follow-ups due or scheduled in the next 7 days. Add a follow-up date to a lead to see it here.')+'</div>';
     var visible=allLeads.filter(function(x){
       var hay=[x.name,x.email,x.industry,x.budget,x.company,x.website].join(' ').toLowerCase();
-      return (!q||hay.indexOf(q)!==-1)&&(!filter||x.status===filter);
+      return (!q||hay.indexOf(q)!==-1)&&(!filter||x.status===filter)&&(!taskFilter||taskKind(x)===taskFilter);
     });
     document.getElementById('stat-total').textContent=allLeads.length;
     document.getElementById('stat-new').textContent=allLeads.filter(function(x){return x.status==='New';}).length;
@@ -220,6 +277,18 @@ export default {
   });
   signout.addEventListener('click',async function(){await client.auth.signOut();showLoggedOut('You have signed out.');});
   document.getElementById('dash-search').addEventListener('input',render);
+  document.querySelectorAll('[data-task-filter]').forEach(function(button){button.addEventListener('click',function(){taskFilter=taskFilter===button.getAttribute('data-task-filter')?'':button.getAttribute('data-task-filter');render();});});
+  document.getElementById('dash-followup-reset').addEventListener('click',function(){taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();});
+  document.getElementById('dash-followup-list').addEventListener('click',function(e){
+    var button=e.target.closest('[data-open-lead]');if(!button)return;
+    var id=button.getAttribute('data-open-lead');taskFilter='';
+    document.getElementById('dash-search').value='';
+    document.getElementById('dash-filter').value='';
+    render();
+    var selector='[data-id="'+String(id).replace(/"/g,'\\"')+'"]';
+    var target=(viewMode==='table'?rowsEl:cardsEl).querySelector(selector);
+    if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.style.outline='2px solid #7da7e8';setTimeout(function(){target.style.outline='';},1800);}
+  });
   document.getElementById('dash-filter').addEventListener('change',render);
   tableViewBtn.addEventListener('click',function(){viewMode='table';render();});
   cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});

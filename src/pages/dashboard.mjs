@@ -174,7 +174,10 @@ export default {
     var sessionResult=await authClient.auth.getSession();
     var session=sessionResult.data&&sessionResult.data.session;
     if(!session)throw new Error('Your session expired. Please sign in again.');
-    var response=await fetch(path,Object.assign({method:'GET',headers:{Authorization:'Bearer '+session.access_token}},options||{}));
+    options=options||{};
+    var headers=Object.assign({Authorization:'Bearer '+session.access_token},options.headers||{});
+    var requestOptions=Object.assign({},options,{method:options.method||'GET',headers:headers});
+    var response=await fetch(path,requestOptions);
     var data=await response.json().catch(function(){return {};});
     if(response.status===401){await authClient.auth.signOut();throw new Error('Your session expired. Please sign in again.');}
     if(!response.ok)throw new Error(data.error==='database_not_configured'?'Neon is not configured for this preview.':data.error==='forbidden'?'This account is not authorised.':'Request failed ('+response.status+').');

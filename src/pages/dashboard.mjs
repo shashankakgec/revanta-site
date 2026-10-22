@@ -131,7 +131,7 @@ export default {
   }
   loginForm.addEventListener('submit',async function(e){
     e.preventDefault();loginButton.disabled=true;loginButton.textContent='Sending link…';
-    var result=await client.auth.signInWithOtp({email:ADMIN,options:{shouldCreateUser:false,emailRedirectTo:window.location.origin+'/dashboard'}});
+    var result=await client.auth.signInWithOtp({email:ADMIN,options:{shouldCreateUser:false,emailRedirectTo:'https://revanta-site.vercel.app/dashboard'}});
     if(result.error) message(loginMessage,'Could not send sign-in link: '+result.error.message,true);
     else message(loginMessage,'If this email is registered and passwordless sign-in is enabled, a secure link will arrive shortly. Check your inbox and spam folder.',false);
     loginButton.disabled=false;loginButton.textContent='Email me a sign-in link';

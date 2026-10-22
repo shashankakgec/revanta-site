@@ -10,13 +10,23 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
   try {
-    const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    if (!token || token === req.headers.authorization) return res.status(401).json({ error: 'unauthorised' });
-    const authUrl = process.env.SUPABASE_URL || 'https://zedwounhjhfiuystjfhr.supabase.co';
-    const authKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo';
-    const auth = await fetch(authUrl + '/auth/v1/user', { headers: { Authorization: 'Bearer ' + token, apikey: authKey } });
+    const authUrl = String(process.env.NEON_AUTH_URL || '').replace(/\\/+$/, '');
+    if (!authUrl) return res.status(503).json({ error: 'auth_not_configured' });
+    const host = req.headers.host || '';
+    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const origin = host ? proto + '://' + host : '';
+    const auth = await fetch(authUrl + '/get-session', {
+      headers: {
+        cookie: req.headers.cookie || '',
+        ...(origin ? { origin, referer: origin + String(req.url || '/') } : {}),
+        accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
     if (!auth.ok) return res.status(401).json({ error: 'unauthorised' });
-    const user = await auth.json();
+    const payload = await auth.json().catch(() => ({}));
+    const user = payload.user || payload.data?.user || payload.session?.user || payload.data?.session?.user;
+    if (!user || !user.email) return res.status(401).json({ error: 'unauthorised' });
     if (!ALLOWED.has(String(user.email || '').toLowerCase())) return res.status(403).json({ error: 'forbidden' });
     if (!process.env.NEON_DATABASE_URL) return res.status(503).json({ error: 'database_not_configured' });
     const sql = neon(process.env.NEON_DATABASE_URL);

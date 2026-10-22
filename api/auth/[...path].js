@@ -34,11 +34,11 @@ export default async function handler(req, res) {
     });
     const getSetCookie = upstream.headers.getSetCookie;
     if (typeof getSetCookie === 'function') {
-      const cookies = getSetCookie().map((cookie) => cookie.replace(/;\\s*Domain=[^;]+/ig, ''));
+      const cookies = getSetCookie().map((cookie) => cookie.replace(/;\s*Domain=[^;]+/ig, ''));
       if (cookies.length) res.setHeader('Set-Cookie', cookies);
     } else {
       const cookie = upstream.headers.get('set-cookie');
-      if (cookie) res.setHeader('Set-Cookie', cookie.replace(/;\\s*Domain=[^;]+/ig, ''));
+      if (cookie) res.setHeader('Set-Cookie', cookie.replace(/;\s*Domain=[^;]+/ig, ''));
     }
     for (const key of ['content-type', 'cache-control', 'www-authenticate']) {
       const value = upstream.headers.get(key);

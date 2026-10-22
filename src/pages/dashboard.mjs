@@ -63,11 +63,30 @@ export default {
   .dash-card-notes label{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px}
   .dash-card-notes .dash-notes{width:100%;box-sizing:border-box;min-width:0}
   .dash-card-save{margin-top:10px}
+  .dash-top-actions{display:flex;align-items:center;gap:8px}
+  .dash-theme-btn{border:1px solid #d4dce8;border-radius:9px;background:#fff;color:#43536d;padding:10px 12px;font-weight:700;cursor:pointer}
+  body.page-dashboard.dark-mode{background:#0b1220;color:#e5eaf3}
+  body.page-dashboard.dark-mode .dash-brand{color:#f1f5fb}
+  body.page-dashboard.dark-mode .dash-eyebrow{color:#9baac2}
+  body.page-dashboard.dark-mode .dash-sub{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-card,body.page-dashboard.dark-mode .dash-stat,body.page-dashboard.dark-mode .dash-lead-card{background:#141e30;border-color:#2a3850;box-shadow:0 8px 28px #00000020}
+  body.page-dashboard.dark-mode .dash-input,body.page-dashboard.dark-mode .dash-select,body.page-dashboard.dark-mode .dash-textarea,body.page-dashboard.dark-mode .dash-cell-select,body.page-dashboard.dark-mode .dash-date,body.page-dashboard.dark-mode .dash-notes{background:#0f1828;color:#e5eaf3;border-color:#35445d;color-scheme:dark}
+  body.page-dashboard.dark-mode .dash-btn--light{background:#263650;color:#e5eaf3}
+  body.page-dashboard.dark-mode .dash-theme-btn,body.page-dashboard.dark-mode .dash-view-btn{background:#17243a;color:#cbd5e1;border-color:#35445d}
+  body.page-dashboard.dark-mode .dash-view-btn[aria-pressed="true"]{background:#dbeafe;color:#142b50;border-color:#dbeafe}
+  body.page-dashboard.dark-mode .dash-table-wrap{background:#141e30;border-color:#2a3850}
+  body.page-dashboard.dark-mode .dash-table th{background:#1a2940;color:#a8b7ce}
+  body.page-dashboard.dark-mode .dash-table th,body.page-dashboard.dark-mode .dash-table td{border-bottom-color:#26354b}
+  body.page-dashboard.dark-mode .dash-name{color:#f1f5fb}
+  body.page-dashboard.dark-mode .dash-muted,body.page-dashboard.dark-mode .dash-lead-meta{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-stat span,body.page-dashboard.dark-mode .dash-lead-details span,body.page-dashboard.dark-mode .dash-card-actions label,body.page-dashboard.dark-mode .dash-card-notes label{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-pill{background:#263650;color:#dbeafe}
+  body.page-dashboard.dark-mode .dash-foot{color:#8999b2}
   @media(max-width:720px){.dash-cards{grid-template-columns:1fr}.dash-view-toggle{justify-content:flex-start}.dash-lead-details{gap:10px}}
   @media(max-width:720px){.dash-wrap{padding:22px 14px 50px}.dash-top{align-items:flex-start}.dash-toolbar{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card{padding:18px}}
 </style>
 <div class="dash-wrap">
-  <div class="dash-top"><div><div class="dash-brand">REVANTA</div><div class="dash-eyebrow" style="margin-top:8px">Private workspace</div></div><button class="dash-btn dash-btn--light" id="dash-signout" hidden>Sign out</button></div>
+  <div class="dash-top"><div><div class="dash-brand">REVANTA</div><div class="dash-eyebrow" style="margin-top:8px">Private workspace</div></div><div class="dash-top-actions"><button class="dash-theme-btn" id="dash-theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch theme">☾ Dark mode</button><button class="dash-btn dash-btn--light" id="dash-signout" hidden>Sign out</button></div></div>
   <section id="dash-login" class="dash-card dash-auth">
     <div class="dash-eyebrow">Lead management</div><h1 style="font-size:32px;margin-top:10px">Welcome back.</h1>
     <p class="dash-sub">Sign in with your authorised Revanta email and password.</p>
@@ -106,6 +125,21 @@ export default {
   var loginMessage = document.getElementById('dash-login-message');
   var loginButton = document.getElementById('dash-login-btn');
   var signout = document.getElementById('dash-signout');
+  var themeToggle = document.getElementById('dash-theme-toggle');
+  function setTheme(theme){
+    var dark=theme==='dark';
+    document.body.classList.toggle('dark-mode',dark);
+    themeToggle.textContent=dark?'☀ Light mode':'☾ Dark mode';
+    themeToggle.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');
+    themeToggle.setAttribute('title',dark?'Switch to light theme':'Switch to dark theme');
+    try{window.localStorage.setItem('revanta-dashboard-theme',dark?'dark':'light');}catch(e){}
+  }
+  var savedTheme='light';
+  try{savedTheme=window.localStorage.getItem('revanta-dashboard-theme')||'light';}catch(e){}
+  setTheme(savedTheme);
+  themeToggle.addEventListener('click',function(){
+    setTheme(document.body.classList.contains('dark-mode')?'light':'dark');
+  });
   var statusEl = document.getElementById('dash-status');
   var rowsEl = document.getElementById('dash-rows');
   var tableWrap = document.querySelector('.dash-table-wrap');

@@ -51,9 +51,11 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
   <section class="portal-card portal-auth" id="portal-auth">
     <h2 id="portal-auth-title">Welcome to your portal</h2><p class="portal-muted" id="portal-auth-copy">Create an account or sign in with the email address you use with Revanta.</p>
     <form id="portal-auth-form">
-      <label class="portal-label" for="portal-name">Your name <span id="portal-name-optional">(for new accounts)</span></label><input class="portal-input" id="portal-name" autocomplete="name" maxlength="100" placeholder="Full name">
-      <label class="portal-label" for="portal-business">Business name <span id="portal-business-optional">(for new accounts)</span></label><input class="portal-input" id="portal-business" autocomplete="organization" maxlength="150" placeholder="Your business">
-      <label class="portal-label" for="portal-email">Email</label><input class="portal-input" id="portal-email" type="email" autocomplete="email" required maxlength="254" placeholder="you@company.com">
+      <div id="portal-signup-fields">
+        <label class="portal-label" for="portal-name">Your name</label><input class="portal-input" id="portal-name" autocomplete="name" maxlength="100" placeholder="Full name">
+        <label class="portal-label" for="portal-business">Business name</label><input class="portal-input" id="portal-business" autocomplete="organization" maxlength="150" placeholder="Your business">
+      </div>
+      <label class="portal-label" for="portal-email">Email ID</label><input class="portal-input" id="portal-email" type="email" autocomplete="email" required maxlength="254" placeholder="you@company.com">
       <label class="portal-label" for="portal-password">Password</label><input class="portal-input" id="portal-password" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="At least 8 characters">
       <div class="portal-actions"><button class="portal-btn" id="portal-submit" type="submit">Sign in</button><button class="portal-btn portal-btn--light" id="portal-switch" type="button">Create account</button></div>
       <p class="portal-msg" id="portal-auth-message" role="status" aria-live="polite"></p>

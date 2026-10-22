@@ -1,5 +1,3 @@
-const adminEmail = 'jaiswalshashank100@gmail.com';
-
 export default {
   path: '/dashboard',
   title: 'Private Lead Dashboard | Revanta',
@@ -115,8 +113,8 @@ export default {
   <section id="dash-login" class="dash-card dash-auth">
     <div class="dash-eyebrow">Lead management</div><h1 style="font-size:32px;margin-top:10px">Welcome back.</h1>
     <p class="dash-sub">Sign in with your authorised Revanta email and password.</p>
-    <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="username" required value="${adminEmail}" readonly><label class="dash-label" for="dash-password">Password</label><input class="dash-input" id="dash-password" type="password" autocomplete="current-password" required minlength="8"><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Sign in</button></form>
-    <p id="dash-login-message" class="dash-message" role="status">Only the authorised account can access lead records. Sign-in does not send an email.</p>
+    <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="username" required placeholder="you@company.com"><label class="dash-label" for="dash-password">Password</label><input class="dash-input" id="dash-password" type="password" autocomplete="current-password" required minlength="8"><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Sign in</button></form>
+    <p id="dash-login-message" class="dash-message" role="status">Only the two approved Revanta accounts can access lead records. Sign-in does not send an email.</p>
   </section>
   <section id="dash-app" hidden>
     <div class="dash-eyebrow">Revanta / Operations</div><h1>Lead dashboard</h1><p class="dash-sub">Review enquiries, track progress and keep follow-ups in one place.</p>
@@ -144,14 +142,14 @@ export default {
     <div id="dash-status" class="dash-message" role="status">Loading leads…</div>
     <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
     <div id="dash-cards" class="dash-cards" hidden></div>
-    <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the authorised account.</p>
+    <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the two approved accounts.</p>
   </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   'use strict';
-  var ADMIN = '${adminEmail}';
+  var APPROVED_EMAILS = ['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in'];
   var SUPABASE_URL = 'https://zedwounhjhfiuystjfhr.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo';
   var login = document.getElementById('dash-login');
@@ -265,7 +263,7 @@ export default {
     var result=await client.auth.getSession();
     var user=result.data&&result.data.session&&result.data.session.user;
     if(!user){showLoggedOut();return;}
-    if((user.email||'').toLowerCase()!==ADMIN.toLowerCase()){
+    if(APPROVED_EMAILS.indexOf((user.email||'').toLowerCase())===-1){
       await client.auth.signOut();showLoggedOut('This account is not authorised for the Revanta dashboard.');return;
     }
     showLoggedIn();await loadLeads();
@@ -273,7 +271,8 @@ export default {
   loginForm.addEventListener('submit',async function(e){
     e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';
     var password=document.getElementById('dash-password').value;
-    var result=await client.auth.signInWithPassword({email:ADMIN,password:password});
+    var email=document.getElementById('dash-email').value.trim().toLowerCase();
+    var result=await client.auth.signInWithPassword({email:email,password:password});
     if(result.error) message(loginMessage,'Could not sign in: '+result.error.message,true);
     else {document.getElementById('dash-password').value='';message(loginMessage,'Signed in successfully.',false);}
     loginButton.disabled=false;loginButton.textContent='Sign in';
@@ -318,7 +317,7 @@ export default {
   });
   client.auth.onAuthStateChange(function(event,session){
     if(event==='SIGNED_OUT'){showLoggedOut();}
-    else if(event==='SIGNED_IN'&&session&&session.user&&(session.user.email||'').toLowerCase()===ADMIN.toLowerCase()){showLoggedIn();loadLeads();}
+    else if(event==='SIGNED_IN'&&session&&session.user&&APPROVED_EMAILS.indexOf((session.user.email||'').toLowerCase())!==-1){showLoggedIn();loadLeads();}
   });
   verifySession();
 })();

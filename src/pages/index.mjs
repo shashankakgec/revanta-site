@@ -11,6 +11,7 @@ import thanks from './thanks.mjs';
 import privacy from './privacy.mjs';
 import dashboard from './dashboard.mjs';
 import portal from './portal.mjs';
+import neonPortal from './neon-portal.mjs';
 import notFound from './not-found.mjs';
 
-export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, portal, notFound];
+export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, portal, neonPortal, notFound];

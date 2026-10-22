@@ -136,8 +136,8 @@ export function renderDocument(page, assets, { year }) {
     : '';
   const ld = structuredData(page)
     .map((o) => `<script type="application/ld+json">${jsonForScript(o)}</script>`)
-    .join('\\n');
-  const pageScripts = (page.scripts || []).map((s) => `<script defer src="${assets.js[s]}"></script>`).join('\\n');
+    .join('\n');
+  const pageScripts = (page.scripts || []).map((s) => `<script defer src="${assets.js[s]}"></script>`).join('\n');
   const bodyClass = `page-${page.path === '/' ? 'home' : page.path.slice(1).replace(/\//g, '-')}`;
 
   return `<!doctype html>

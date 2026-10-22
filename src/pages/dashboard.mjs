@@ -49,9 +49,9 @@ export default {
   <div class="dash-top"><div><div class="dash-brand">REVANTA</div><div class="dash-eyebrow" style="margin-top:8px">Private workspace</div></div><button class="dash-btn dash-btn--light" id="dash-signout" hidden>Sign out</button></div>
   <section id="dash-login" class="dash-card dash-auth">
     <div class="dash-eyebrow">Lead management</div><h1 style="font-size:32px;margin-top:10px">Welcome back.</h1>
-    <p class="dash-sub">Sign in with the authorised Revanta email. We’ll send a secure, passwordless sign-in link.</p>
-    <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="email" required value="${adminEmail}" readonly><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Email me a sign-in link</button></form>
-    <p id="dash-login-message" class="dash-message" role="status">Only the authorised account can access lead records.</p>
+    <p class="dash-sub">Sign in with your authorised Revanta email and password.</p>
+    <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="username" required value="${adminEmail}" readonly><label class="dash-label" for="dash-password">Password</label><input class="dash-input" id="dash-password" type="password" autocomplete="current-password" required minlength="8><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Sign in</button></form>
+    <p id="dash-login-message" class="dash-message" role="status">Only the authorised account can access lead records. Sign-in does not send an email.</p>
   </section>
   <section id="dash-app" hidden>
     <div class="dash-eyebrow">Revanta / Operations</div><h1>Lead dashboard</h1><p class="dash-sub">Review enquiries, track progress and keep follow-ups in one place.</p>
@@ -130,11 +130,12 @@ export default {
     showLoggedIn();await loadLeads();
   }
   loginForm.addEventListener('submit',async function(e){
-    e.preventDefault();loginButton.disabled=true;loginButton.textContent='Sending link…';
-    var result=await client.auth.signInWithOtp({email:ADMIN,options:{shouldCreateUser:false,emailRedirectTo:'https://revanta-site.vercel.app/dashboard'}});
-    if(result.error) message(loginMessage,'Could not send sign-in link: '+result.error.message,true);
-    else message(loginMessage,'If this email is registered and passwordless sign-in is enabled, a secure link will arrive shortly. Check your inbox and spam folder.',false);
-    loginButton.disabled=false;loginButton.textContent='Email me a sign-in link';
+    e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';
+    var password=document.getElementById('dash-password').value;
+    var result=await client.auth.signInWithPassword({email:ADMIN,password:password});
+    if(result.error) message(loginMessage,'Could not sign in: '+result.error.message,true);
+    else {document.getElementById('dash-password').value='';message(loginMessage,'Signed in successfully.',false);}
+    loginButton.disabled=false;loginButton.textContent='Sign in';
   });
   signout.addEventListener('click',async function(){await client.auth.signOut();showLoggedOut('You have signed out.');});
   document.getElementById('dash-search').addEventListener('input',render);

@@ -1,43 +1,198 @@
-(function(){
-'use strict';
-var URL_BASE='https://zedwounhjhfiuystjfhr.supabase.co', KEY='sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo', db, user, items=[];
-var $=function(id){return document.getElementById(id)};
-function msg(id,t,bad){var e=$(id);if(e){e.textContent=t||'';e.className='portal-msg'+(bad?' portal-error':t?' portal-success':'')}}
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function url(s){try{var u=new URL(s);return /^https?:$/.test(u.protocol)?u.href:''}catch(e){return ''}}
-function link(t,s){var u=url(s);return u?'<a target="_blank" rel="noopener noreferrer" href="'+esc(u)+'">'+t+'</a>':''}
-var labels={planning:'Planning',in_progress:'In progress',review:'In review',ready:'Ready',live:'Live',paused:'Paused'};
-function card(p,editable){var h='<article class="portal-project" data-id="'+esc(p.id)+'"><div class="portal-project-head"><div><h3>'+esc(p.name)+'</h3><p class="portal-muted">'+esc(p.description||'No milestone details yet.')+'</p></div><span class="portal-pill">'+esc(labels[p.status]||p.status)+'</span></div><div class="portal-links">'+link('Open preview ↗',p.preview_url)+link('Open live website ↗',p.live_url)+'</div>';
-if(editable)h+='<div class="portal-divider"></div><label class="portal-label">Status</label><select class="portal-select" data-status>'+Object.keys(labels).map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+labels[s]+'</option>'}).join('')+'</select><label class="portal-label">Milestone / description</label><textarea class="portal-area" data-desc>'+esc(p.description||'')+'</textarea><label class="portal-label">Preview URL</label><input class="portal-input" data-preview value="'+esc(p.preview_url||'')+'"><label class="portal-label">Live URL</label><input class="portal-input" data-live value="'+esc(p.live_url||'')+'"><div class="portal-actions"><button type="button" class="portal-btn" data-save>Save updates</button></div><p class="portal-msg" data-msg role="status"></p>';
-return h+'</article>'}
-function show(session){user=session&&session.user||null;$('portal-auth').hidden=!!user;$('portal-client').hidden=!user;if(user){$('portal-user-id').textContent=user.id;$('portal-account').textContent=user.email||'';$('portal-greeting').textContent='Hello'+(user.user_metadata&&user.user_metadata.full_name?' '+user.user_metadata.full_name:'')+'.'}}
-async function load(){
-var meta=user.user_metadata||{}, name=meta.full_name||'', biz=meta.business_name||'';
-var p=await db.from('client_profiles').select('full_name,business_name').eq('user_id',user.id).maybeSingle();
-if(p.error)throw p.error;
-name=p.data&&p.data.full_name||name;biz=p.data&&p.data.business_name||biz;
-if(!p.data){var up=await db.from('client_profiles').upsert({user_id:user.id,full_name:name||null,business_name:biz||null},{onConflict:'user_id'});if(up.error)throw up.error}
-$('portal-greeting').textContent='Hello'+(name?' '+name:'')+'.';if(biz)$('portal-account').textContent=user.email+' · '+biz;
-var m=await db.from('client_project_members').select('project_id').eq('user_id',user.id);if(m.error)throw m.error;
-var ids=m.data.map(function(x){return x.project_id});
-if(!ids.length)items=[];else{var c=await db.from('client_projects').select('*').in('id',ids).order('updated_at',{ascending:false});if(c.error)throw c.error;items=c.data}
-$('portal-project-list').innerHTML=items.length?items.map(function(x){return card(x,false)}).join(''):'<div class="portal-empty">No project has been assigned yet. Your project will appear here once Revanta links it to your account.</div>';
-}
-function err(e){var s=e&&e.message||'Something went wrong.';if(/invalid login credentials/i.test(s))return 'Email or password is incorrect.';if(/email not confirmed/i.test(s))return 'This account needs email confirmation. Check your inbox and spam folder before signing in.';if(/user already registered|already been registered|email.*already.*(exist|register)|duplicate/i.test(s))return 'An account with this email already exists. Switch to Sign in.';if(/failed to fetch|networkerror|load failed/i.test(s))return 'Could not reach Supabase. Check your internet connection and try again.';return s}
-var signupMode=false;
-function setMode(signup){signupMode=!!signup;$('portal-signin-form').hidden=signupMode;$('portal-signup-section').hidden=!signupMode;$('portal-auth-title').textContent=signupMode?'Create your client account':'Sign in';$('portal-auth-copy').textContent=signupMode?'Create an account to get started. Your projects remain private until Revanta assigns them.':'Sign in with your email ID and password to view your Revanta projects.';$('portal-auth-toggle-copy').textContent=signupMode?'Already have an account?':'Don’t have an account yet?';$('portal-auth-toggle').textContent=signupMode?'Sign in':'Create account';msg('portal-signin-message','',false);msg('portal-signup-message','',false);$('portal-name').disabled=!signupMode;$('portal-business').disabled=!signupMode;$('portal-signup-email').disabled=!signupMode;$('portal-signup-password').disabled=!signupMode;$('portal-name').required=signupMode;$('portal-business').required=signupMode;$('portal-signup-email').required=signupMode;$('portal-signup-password').required=signupMode}
-function bindAuthToggle(){var b=$('portal-auth-toggle');if(!b)return;b.addEventListener('click',function(e){e.preventDefault();var section=$('portal-signup-section');var open=!!(section&&section.hidden);setMode(open);if(open){try{history.replaceState(null,'',location.pathname+'?mode=signup')}catch(_){}$('portal-name').focus()}else{try{history.replaceState(null,'',location.pathname)}catch(_){}}})}
-function init(){console.info('[Revanta portal diagnostic] init started; Supabase global:',!!window.supabase);if(!window.supabase){msg('portal-signin-message','Portal library did not load. Refresh and try again.',true);msg('portal-signup-message','Portal authentication could not initialize. Check your connection and refresh this page before creating an account.',true);return}db=window.supabase.createClient(URL_BASE,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});console.info('[Revanta portal diagnostic] Supabase client initialized.');
-$('portal-signup-form').onsubmit=async function(e){e.preventDefault();console.info('[Revanta portal diagnostic] signup submit handler entered.');var b=$('portal-signup-submit');b.disabled=true;msg('portal-signup-message','Creating account…',false);try{var res=await db.auth.signUp({email:$('portal-signup-email').value.trim().toLowerCase(),password:$('portal-signup-password').value,options:{data:{full_name:$('portal-name').value.trim(),business_name:$('portal-business').value.trim()}}});if(res.error)throw res.error;if(!res.data.user)throw new Error('Supabase did not return a user for this signup. Please try again.');if(!res.data.session){setMode(true);msg('portal-signup-message','Signup request received. Supabase requires email confirmation before sign-in. Check your inbox and spam folder. If no email arrives, try signing in or use a different email.',true);return}show(res.data);msg('portal-client-message','Account created. Loading your workspace…',false);try{await load()}catch(loadError){msg('portal-client-message','Your account was created and you are signed in, but the workspace could not load: '+err(loadError),true)}}catch(e){setMode(true);msg('portal-signup-message',err(e),true)}finally{b.disabled=false}};
-$('portal-signin-form').onsubmit=async function(e){e.preventDefault();var b=$('portal-signin-submit');b.disabled=true;msg('portal-signin-message','Signing in…',false);try{var res=await db.auth.signInWithPassword({email:$('portal-signin-email').value.trim().toLowerCase(),password:$('portal-signin-password').value});if(res.error)throw res.error;show(res.data);msg('portal-client-message','Loading your workspace…',false);try{await load()}catch(loadError){msg('portal-client-message','You are signed in, but your workspace could not load: '+err(loadError),true)}}catch(e){msg('portal-signin-message',err(e),true)}finally{b.disabled=false}};
-async function signout(){await db.auth.signOut();show(null);setMode(false)}$('portal-signout').onclick=signout;$('portal-staff-signout').onclick=signout;
-$('portal-copy-id').onclick=async function(){try{await navigator.clipboard.writeText(user.id);msg('portal-client-message','Account ID copied.',false)}catch(e){msg('portal-client-message','Select and copy the account ID shown above.',true)}};
-var s=await db.auth.getSession();if(s.error){msg('portal-signin-message',err(s.error),true);return}if(s.data.session){show(s.data.session);try{await load()}catch(e){msg('portal-client-message',err(e),true)}}
-}
-function loadLibrary(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=init;s.onerror=function(){msg('portal-signin-message','Could not load the sign-in library. Check your connection and refresh the page.',true);msg('portal-signup-message','Could not load the sign-in library. Check your connection and refresh the page.',true)};document.head.appendChild(s)}
-function boot(){console.info('[Revanta portal diagnostic] boot started.');bindAuthToggle();var signupRequested=false;try{signupRequested=new URLSearchParams(location.search).get('mode')==='signup'}catch(_){}setMode(signupRequested);
-// Guard against native form submission while the Supabase SDK is still loading or unavailable.
-$('portal-signup-form').addEventListener('submit',function(e){if(!db){e.preventDefault();e.stopImmediatePropagation();console.warn('[Revanta portal diagnostic] submit captured but Supabase client is not initialized.');setMode(true);msg('portal-signup-message','Diagnostic: signup button was detected, but the Supabase client is not initialized. Please wait a moment and try again.',true)}else{console.info('[Revanta portal diagnostic] submit captured; client initialized.');msg('portal-signup-message','Diagnostic: submit detected; Supabase client initialized. Checking whether the signup handler runs…',false)}},true);
-loadLibrary()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else{boot()}
+(function () {
+  'use strict';
+  var authClient, user = null, profile = null, items = [];
+  var $ = function (id) { return document.getElementById(id); };
+
+  function msg(id, text, bad) {
+    var el = $(id);
+    if (el) {
+      el.textContent = text || '';
+      el.className = 'portal-msg' + (bad ? ' portal-error' : text ? ' portal-success' : '');
+    }
+  }
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function safeUrl(value) {
+    try { var u = new URL(value); return /^https?:$/.test(u.protocol) ? u.href : ''; }
+    catch (_) { return ''; }
+  }
+  function link(label, value) {
+    var href = safeUrl(value);
+    return href ? '<a target="_blank" rel="noopener noreferrer" href="' + esc(href) + '">' + label + '</a>' : '';
+  }
+  var labels = { planning: 'Planning', in_progress: 'In progress', review: 'In review', ready: 'Ready', live: 'Live', paused: 'Paused' };
+  function card(project) {
+    return '<article class="portal-project" data-id="' + esc(project.id) + '">' +
+      '<div class="portal-project-head"><div><h3>' + esc(project.name) + '</h3><p class="portal-muted">' +
+      esc(project.description || 'No milestone details yet.') + '</p></div><span class="portal-pill">' +
+      esc(labels[project.status] || project.status || 'Planning') + '</span></div><div class="portal-links">' +
+      link('Open preview ↗', project.preview_url) + link('Open live website ↗', project.live_url) + '</div></article>';
+  }
+  function normalizeSession(result) {
+    var data = result && result.data;
+    return data && (data.user || (data.session && data.session.user)) || null;
+  }
+  function show(nextUser) {
+    user = nextUser || null;
+    $('portal-auth').hidden = !!user;
+    $('portal-client').hidden = !user;
+    $('portal-staff').hidden = true;
+    if (user) {
+      $('portal-user-id').textContent = user.id || '';
+      $('portal-account').textContent = user.email || '';
+      $('portal-greeting').textContent = 'Hello' + (profile && profile.full_name ? ' ' + profile.full_name : user.name ? ' ' + user.name : '') + '.';
+    }
+  }
+  async function api(method, body) {
+    var response = await fetch('/api/client-projects', {
+      method: method || 'GET',
+      credentials: 'same-origin',
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined
+    });
+    var data = await response.json().catch(function () { return {}; });
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('Your session expired. Please sign in again.');
+      if (data.error === 'database_not_configured') throw new Error('Neon database is not configured for this preview.');
+      throw new Error(data.error === 'forbidden' ? 'This account cannot access this workspace.' : 'Could not load your workspace (' + response.status + ').');
+    }
+    return data;
+  }
+  async function load() {
+    var data = await api('GET');
+    profile = data.profile || null;
+    if (!profile) {
+      var saved = await api('POST', {
+        full_name: $('portal-name').value.trim() || (user && user.name) || '',
+        business_name: $('portal-business').value.trim() || ''
+      });
+      profile = saved.profile || null;
+    }
+    $('portal-greeting').textContent = 'Hello' + (profile && profile.full_name ? ' ' + profile.full_name : user.name ? ' ' + user.name : '') + '.';
+    $('portal-account').textContent = (user.email || '') + (profile && profile.business_name ? ' · ' + profile.business_name : '');
+    items = Array.isArray(data.projects) ? data.projects : [];
+    $('portal-project-list').innerHTML = items.length ? items.map(card).join('') :
+      '<div class="portal-empty">No project has been assigned yet. Your project will appear here once Revanta links it to your account.</div>';
+    msg('portal-client-message', items.length ? 'Your workspace is up to date.' : 'You are signed in. Your projects will appear here once assigned.', false);
+  }
+  function errorText(error) {
+    var text = error && error.message || 'Something went wrong. Please try again.';
+    if (/already exists|already registered|user already/i.test(text)) return 'An account with this email already exists. Switch to Sign in.';
+    if (/invalid email or password|invalid credentials|incorrect password/i.test(text)) return 'Email or password is incorrect.';
+    if (/failed to fetch|networkerror|load failed/i.test(text)) return 'Could not reach Neon Auth. Check your connection and try again.';
+    return text;
+  }
+  var signupMode = false;
+  function setMode(signup) {
+    signupMode = !!signup;
+    $('portal-signin-form').hidden = signupMode;
+    $('portal-signup-section').hidden = !signupMode;
+    $('portal-auth-title').textContent = signupMode ? 'Create your client account' : 'Sign in';
+    $('portal-auth-copy').textContent = signupMode
+      ? 'Create an account to get started. Your projects remain private until Revanta assigns them.'
+      : 'Sign in with your email ID and password to view your Revanta projects.';
+    $('portal-auth-toggle-copy').textContent = signupMode ? 'Already have an account?' : 'Don’t have an account yet?';
+    $('portal-auth-toggle').textContent = signupMode ? 'Sign in' : 'Create account';
+    msg('portal-signin-message', '', false);
+    msg('portal-signup-message', '', false);
+    $('portal-name').disabled = !signupMode;
+    $('portal-business').disabled = !signupMode;
+    $('portal-signup-email').disabled = !signupMode;
+    $('portal-signup-password').disabled = !signupMode;
+    $('portal-name').required = signupMode;
+    $('portal-business').required = signupMode;
+    $('portal-signup-email').required = signupMode;
+    $('portal-signup-password').required = signupMode;
+  }
+  async function refreshSession() {
+    var result = await authClient.getSession();
+    var nextUser = normalizeSession(result);
+    show(nextUser);
+    if (nextUser) {
+      try { await load(); }
+      catch (error) { msg('portal-client-message', errorText(error), true); }
+    }
+  }
+  function bind() {
+    $('portal-auth-toggle').addEventListener('click', function (event) {
+      event.preventDefault();
+      setMode(!signupMode);
+      try { history.replaceState(null, '', location.pathname + (signupMode ? '?mode=signup' : '')); } catch (_) {}
+      if (signupMode) $('portal-name').focus();
+    });
+    $('portal-signup-form').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var button = $('portal-signup-submit');
+      button.disabled = true;
+      msg('portal-signup-message', 'Creating account with Neon…', false);
+      try {
+        var result = await authClient.signUp.email({
+          name: $('portal-name').value.trim(),
+          email: $('portal-signup-email').value.trim().toLowerCase(),
+          password: $('portal-signup-password').value
+        });
+        if (result && result.error) throw result.error;
+        var sessionResult = await authClient.getSession();
+        var nextUser = normalizeSession(sessionResult);
+        if (!nextUser) {
+          setMode(false);
+          $('portal-signin-email').value = $('portal-signup-email').value.trim().toLowerCase();
+          msg('portal-signin-message', 'Account created. Sign in to open your workspace.', false);
+          return;
+        }
+        show(nextUser);
+        await api('POST', { full_name: $('portal-name').value.trim(), business_name: $('portal-business').value.trim() });
+        await load();
+        msg('portal-client-message', 'Account created. Your client workspace is ready.', false);
+      } catch (error) {
+        setMode(true);
+        msg('portal-signup-message', errorText(error), true);
+      } finally { button.disabled = false; }
+    });
+    $('portal-signin-form').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var button = $('portal-signin-submit');
+      button.disabled = true;
+      msg('portal-signin-message', 'Signing in…', false);
+      try {
+        var result = await authClient.signIn.email({
+          email: $('portal-signin-email').value.trim().toLowerCase(),
+          password: $('portal-signin-password').value
+        });
+        if (result && result.error) throw result.error;
+        await refreshSession();
+        if (!user) throw new Error('Sign-in did not establish a session. Please try again.');
+      } catch (error) { msg('portal-signin-message', errorText(error), true); }
+      finally { button.disabled = false; }
+    });
+    async function signout() {
+      try { await authClient.signOut(); } finally { profile = null; show(null); setMode(false); }
+    }
+    $('portal-signout').addEventListener('click', signout);
+    $('portal-staff-signout').addEventListener('click', signout);
+    $('portal-copy-id').addEventListener('click', async function () {
+      try { await navigator.clipboard.writeText(user.id); msg('portal-client-message', 'Account ID copied.', false); }
+      catch (_) { msg('portal-client-message', 'Select and copy the account ID shown above.', true); }
+    });
+  }
+  async function boot() {
+    var signupRequested = false;
+    try { signupRequested = new URLSearchParams(location.search).get('mode') === 'signup'; } catch (_) {}
+    setMode(signupRequested);
+    try {
+      var mod = await import('https://esm.sh/@neondatabase/auth@latest');
+      if (!mod.createAuthClient) throw new Error('Neon Auth client did not load.');
+      authClient = mod.createAuthClient(window.location.origin + '/api/auth');
+      bind();
+      await refreshSession();
+    } catch (error) {
+      msg('portal-signin-message', 'Neon Auth could not initialize: ' + errorText(error), true);
+      msg('portal-signup-message', 'Neon Auth could not initialize: ' + errorText(error), true);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();

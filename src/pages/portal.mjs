@@ -45,7 +45,7 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
 .portal-stat strong{display:block;font-size:12px;margin-bottom:5px}
 @media(max-width:720px){.portal-grid{grid-template-columns:1fr}.portal-hero{padding:24px}.portal{padding:18px 14px 50px}.portal-top{margin-bottom:20px}}
 </style>
-<main class="portal">
+<div class="portal">
   <div class="portal-top"><a class="portal-brand" href="/">REVANTA</a><a href="/">Back to website ↗</a></div>
   <section class="portal-hero"><div class="portal-eyebrow">Revanta · Client workspace</div><h1>Your project, clearly in view.</h1><p>Sign in to track project progress, review preview links, and open your live website when it is ready. Project access is granted individually by the Revanta team.</p></section>
   <section class="portal-card portal-auth" id="portal-auth">
@@ -85,5 +85,5 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
     <div class="portal-card portal-panel"><h2>All projects</h2><div id="portal-staff-projects"><div class="portal-empty">Loading projects…</div></div></div>
   </section>
   <p class="portal-small" style="text-align:center;margin-top:24px">Keep your password private. Revanta will never ask you to send it by email or message.</p>
-</main>`,
+</div>`,
 };

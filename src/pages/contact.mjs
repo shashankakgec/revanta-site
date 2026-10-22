@@ -83,8 +83,15 @@ const render = (p, list) =>
 const fields = [
   { kind: 'input', name: 'name', label: 'Name', autocomplete: 'name', required: true },
   { kind: 'input', name: 'email', label: 'Work email', type: 'email', autocomplete: 'email', inputmode: 'email', required: true },
+  { kind: 'input', name: 'company', label: 'Company / business name', autocomplete: 'organization' },
+  { kind: 'input', name: 'website', label: 'Website', inputmode: 'url', placeholder: 'yourcompany.com' },
   { kind: 'select', name: 'industry', label: 'Industry', options: industryOptions, required: true },
+  { kind: 'input', name: 'offering', label: 'Main product or service' },
+  { kind: 'input', name: 'customer_value', label: 'Typical customer value', placeholder: 'Approximate value per customer' },
+  { kind: 'checks', name: 'channels', label: 'Current marketing channels', options: ['Google Ads', 'Meta Ads', 'SEO', 'Referrals', 'Email', 'Other'] },
+  { kind: 'textarea', name: 'challenge', label: 'Biggest growth challenge', rows: 3 },
   { kind: 'select', name: 'budget', label: 'Marketing budget', options: budgetOptions, required: true },
+  { kind: 'textarea', name: 'notes', label: 'Anything else we should know?', rows: 3 },
 ];
 
 function form({ type, prefix, fields, submit }) {

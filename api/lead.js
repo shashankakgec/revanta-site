@@ -3,14 +3,9 @@
 
 const FORMS = {
   general: {
-    required: ['name', 'email', 'company', 'website', 'industry', 'offering', 'challenge'],
-    text: { name: 120, email: 200, company: 160, website: 200, industry: 80, offering: 600, customer_value: 160, challenge: 2000, budget: 80, notes: 3000 },
-    list: { channels: 12 },
-  },
-  dental: {
-    required: ['name', 'email', 'practice', 'location', 'website', 'treatments', 'challenge'],
-    text: { name: 120, email: 200, practice: 160, location: 120, website: 200, budget: 80, challenge: 2000 },
-    list: { treatments: 12, channels: 12 },
+    required: ['name', 'email', 'industry', 'budget'],
+    text: { name: 120, email: 200, industry: 80, budget: 80 },
+    list: {},
   },
 };
 
@@ -68,18 +63,18 @@ async function storeLead(lead) {
     body: JSON.stringify({
       name: f.name,
       email: f.email || null,
-      company: f.company || f.practice || null,
-      website: f.website || null,
+      company: null,
+      website: null,
       industry: f.industry || null,
-      offering: f.offering || null,
-      customer_value: f.customer_value || null,
-      channels: f.channels?.length ? f.channels : null,
-      challenge: f.challenge || null,
+      offering: null,
+      customer_value: null,
+      channels: null,
+      challenge: null,
       budget: f.budget || null,
-      notes: f.notes || null,
-      practice: f.practice || null,
-      location: f.location || null,
-      treatments: f.treatments?.length ? f.treatments : null,
+      notes: null,
+      practice: null,
+      location: null,
+      treatments: null,
       form_type: lead.form_type,
       created_at: lead.submitted_at,
       page_path: lead.page,
@@ -110,7 +105,7 @@ export default async function handler(req, res) {
   }
   body = body && typeof body === 'object' ? body : {};
 
-  const type = body.form_type === 'dental' ? 'dental' : 'general';
+  const type = 'general';
   const spec = FORMS[type];
 
   const submittedFast = Number(body.form_ts) > 0 && Date.now() - Number(body.form_ts) < 1500;
@@ -119,7 +114,7 @@ export default async function handler(req, res) {
   const fields = {};
   for (const [key, max] of Object.entries(spec.text)) fields[key] = oneLine(body[key], max);
   for (const [key, max] of Object.entries(spec.list)) fields[key] = cleanList(body[key], max);
-  for (const key of ['offering', 'challenge', 'notes']) if (key in fields) fields[key] = clean(body[key], spec.text[key]);
+
 
   const errors = {};
   for (const key of spec.required) {

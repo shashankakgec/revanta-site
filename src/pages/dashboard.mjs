@@ -188,7 +188,7 @@ export default {
   document.getElementById('dash-filter').addEventListener('change',render);
   tableViewBtn.addEventListener('click',function(){viewMode='table';render();});
   cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});
-  function saveLeadFromRow(button){
+  async function saveLeadFromRow(button){
     var row=button.closest('[data-id]');var id=row.getAttribute('data-id');
     var status=row.querySelector('[data-field="status"]').value;
     var follow=row.querySelector('[data-field="follow_up_at"]').value;

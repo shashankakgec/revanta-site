@@ -17,7 +17,8 @@ async function currentUser(req) {
   });
   if (!response.ok) return null;
   const payload = await response.json().catch(() => ({}));
-  return payload.user || payload.data?.user || payload.session?.user || payload.data?.session?.user || null;
+  const safePayload = payload && typeof payload === 'object' ? payload : {};
+  return safePayload.user || safePayload.data?.user || safePayload.session?.user || safePayload.data?.session?.user || null;
 }
 
 export default async function handler(req, res) {

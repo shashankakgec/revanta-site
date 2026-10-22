@@ -11,15 +11,28 @@ function card(p,editable){var h='<article class="portal-project" data-id="'+esc(
 if(editable)h+='<div class="portal-divider"></div><label class="portal-label">Status</label><select class="portal-select" data-status>'+Object.keys(labels).map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+labels[s]+'</option>'}).join('')+'</select><label class="portal-label">Milestone / description</label><textarea class="portal-area" data-desc>'+esc(p.description||'')+'</textarea><label class="portal-label">Preview URL</label><input class="portal-input" data-preview value="'+esc(p.preview_url||'')+'"><label class="portal-label">Live URL</label><input class="portal-input" data-live value="'+esc(p.live_url||'')+'"><div class="portal-actions"><button type="button" class="portal-btn" data-save>Save updates</button></div><p class="portal-msg" data-msg role="status"></p>';
 return h+'</article>'}
 function show(session){user=session&&session.user||null;$('portal-auth').hidden=!!user;$('portal-client').hidden=!user;$('portal-staff').hidden=true;if(user){$('portal-user-id').textContent=user.id;$('portal-account').textContent=user.email||'';$('portal-greeting').textContent='Hello'+(user.user_metadata&&user.user_metadata.full_name?' '+user.user_metadata.full_name:'')+'.'}}
-async function load(){var p=await db.from('client_profiles').select('full_name,business_name').eq('user_id',user.id).maybeSingle();if(p.error)throw p.error;
-var meta=user.user_metadata||{}, name=p.data&&p.data.full_name||meta.full_name||'', biz=p.data&&p.data.business_name||meta.business_name||'';
-if(!p.data&&(name||biz)){var up=await db.from('client_profiles').upsert({user_id:user.id,full_name:name,business_name:biz},{onConflict:'user_id'});if(up.error)throw up.error}
-$('portal-greeting').textContent='Hello'+(name?' '+name:'')+'.';if(biz)$('portal-account').textContent=user.email+' · '+biz;
-var r=await db.from('staff_roles').select('role').eq('user_id',user.id).maybeSingle();staff=!r.error&&!!r.data;
+async function load(){
+var roleResult=await db.from('staff_roles').select('role').eq('user_id',user.id).maybeSingle();
+if(roleResult.error)throw roleResult.error;
+staff=!!roleResult.data;
+var meta=user.user_metadata||{}, name=meta.full_name||'', biz=meta.business_name||'';
+if(!staff){
+var p=await db.from('client_profiles').select('full_name,business_name').eq('user_id',user.id).maybeSingle();
+if(p.error)throw p.error;
+name=p.data&&p.data.full_name||name;
+biz=p.data&&p.data.business_name||biz;
+if(!p.data){
+var up=await db.from('client_profiles').upsert({user_id:user.id,full_name:name||null,business_name:biz||null},{onConflict:'user_id'});
+if(up.error)throw up.error;
+}
+}
+$('portal-greeting').textContent='Hello'+(name?' '+name:'')+'.';
+if(biz)$('portal-account').textContent=user.email+' · '+biz;
 if(staff){var all=await db.from('client_projects').select('*').order('updated_at',{ascending:false});if(all.error)throw all.error;items=all.data}
 else{var m=await db.from('client_project_members').select('project_id').eq('user_id',user.id);if(m.error)throw m.error;var ids=m.data.map(function(x){return x.project_id});if(!ids.length)items=[];else{var c=await db.from('client_projects').select('*').in('id',ids).order('updated_at',{ascending:false});if(c.error)throw c.error;items=c.data}}
-$('portal-project-list').innerHTML=items.length?items.map(function(x){return card(x,false)}).join(''):'<div class="portal-empty">No project has been assigned yet. Your project will appear here once Revanta links it to your account.</div>';
-$('portal-staff').hidden=!staff;if(staff){$('assign-project').innerHTML='<option value="">Choose a project</option>'+items.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('');$('portal-staff-projects').innerHTML=items.length?items.map(function(x){return card(x,true)}).join(''):'<div class="portal-empty">No projects yet. Create your first project above.</div>'}
+$('portal-project-list').innerHTML=items.length?items.map(function(x){return card(x,false)}).join():'<div class="portal-empty">No project has been assigned yet. Your project will appear here once Revanta links it to your account.</div>';
+$('portal-staff').hidden=!staff;
+if(staff){$('assign-project').innerHTML='<option value="">Choose a project</option>'+items.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('');$('portal-staff-projects').innerHTML=items.length?items.map(function(x){return card(x,true)}).join():'<div class="portal-empty">No projects yet. Create your first project above.</div>'}
 }
 function err(e){var s=e&&e.message||'Something went wrong.';if(/invalid login credentials/i.test(s))return 'Email or password is incorrect.';if(/email not confirmed/i.test(s))return 'Email confirmation is still enabled in Supabase. The portal owner needs to disable Confirm email for this testing phase.';if(/user already registered|already been registered|email.*already.*(exist|register)|duplicate/i.test(s))return 'An account with this email already exists. Please sign in instead.';return s}
 var signupMode=false;

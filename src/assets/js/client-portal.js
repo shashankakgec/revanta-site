@@ -36,5 +36,5 @@ $('portal-staff-projects').onclick=async function(e){var b=e.target.closest('[da
 var s=await db.auth.getSession();if(s.error){msg('portal-signin-message',err(s.error),true);return}if(s.data.session){show(s.data.session);try{await load()}catch(e){msg('portal-client-message',err(e),true)}}
 }
 function loadLibrary(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=init;s.onerror=function(){msg('portal-auth-message','Could not load the sign-in library. Check your connection.',true)};document.head.appendChild(s)}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){bindAuthToggle();loadLibrary()});else{bindAuthToggle();loadLibrary()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){loadLibrary()});else{loadLibrary()}
 })();

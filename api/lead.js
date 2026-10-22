@@ -4,8 +4,8 @@
 const FORMS = {
   general: {
     required: ['name', 'email', 'industry', 'budget'],
-    text: { name: 120, email: 200, industry: 80, budget: 80 },
-    list: {},
+    text: { name: 120, email: 200, company: 160, website: 300, industry: 80, offering: 200, customer_value: 120, challenge: 2000, budget: 80, notes: 3000 },
+    list: { channels: 6 },
   },
 };
 
@@ -63,8 +63,15 @@ async function storeLead(lead) {
     body: JSON.stringify({
       name: f.name,
       email: f.email,
+      company: f.company || null,
+      website: f.website || null,
       industry: f.industry,
+      offering: f.offering || null,
+      customer_value: f.customer_value || null,
+      channels: f.channels || [],
+      challenge: f.challenge || null,
       budget: f.budget,
+      notes: f.notes || null,
       form_type: lead.form_type,
       created_at: lead.submitted_at,
       page_path: lead.page,

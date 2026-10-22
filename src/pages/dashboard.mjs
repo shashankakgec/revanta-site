@@ -274,7 +274,11 @@ export default {
     var email=document.getElementById('dash-email').value.trim().toLowerCase();
     var result=await client.auth.signInWithPassword({email:email,password:password});
     if(result.error) message(loginMessage,'Could not sign in: '+result.error.message,true);
-    else {document.getElementById('dash-password').value='';message(loginMessage,'Signed in successfully.',false);}
+    else {
+      document.getElementById('dash-password').value='';
+      await verifySession();
+      if(!app.hidden) message(loginMessage,'Signed in successfully.',false);
+    }
     loginButton.disabled=false;loginButton.textContent='Sign in';
   });
   signout.addEventListener('click',async function(){await client.auth.signOut();showLoggedOut('You have signed out.');});

@@ -47,6 +47,7 @@ export default {
   .dash-view-btn{border:1px solid #d4dce8;border-radius:9px;background:#fff;color:#43536d;padding:9px 13px;font-weight:700;cursor:pointer}
   .dash-view-btn[aria-pressed="true"]{background:#142b50;color:#fff;border-color:#142b50}
   .dash-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .dash-cards[hidden],.dash-table-wrap[hidden]{display:none!important}
   .dash-lead-card{background:#fff;border:1px solid #e1e7f0;border-radius:14px;padding:18px;box-shadow:0 8px 28px #12234208;min-width:0}
   .dash-lead-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
   .dash-lead-card h3{font-size:17px;margin:0 0 5px;overflow-wrap:anywhere}

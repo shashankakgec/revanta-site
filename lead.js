@@ -8,14 +8,9 @@
 
 const FORMS = {
   general: {
-    required: ['name', 'email', 'company', 'website', 'industry', 'offering', 'challenge'],
-    text: { name: 120, email: 200, company: 160, website: 200, industry: 80, offering: 600, customer_value: 160, challenge: 2000, budget: 80, notes: 3000 },
-    list: { channels: 12 },
-  },
-  dental: {
-    required: ['name', 'email', 'practice', 'location', 'website', 'treatments', 'challenge'],
-    text: { name: 120, email: 200, practice: 160, location: 120, website: 200, budget: 80, challenge: 2000 },
-    list: { treatments: 12, channels: 12 },
+    required: ['name', 'email', 'industry', 'budget'],
+    text: { name: 120, email: 200, industry: 80, budget: 80 },
+    list: {},
   },
 };
 
@@ -102,7 +97,7 @@ async function deliver(lead) {
   const jobs = [];
   if (LEAD_WEBHOOK_URL) jobs.push(postJson(LEAD_WEBHOOK_URL, lead));
   if (RESEND_API_KEY && LEAD_TO_EMAIL && LEAD_FROM_EMAIL) {
-    const who = lead.fields.company || lead.fields.practice || lead.fields.name;
+    const who = lead.fields.name;
     jobs.push(
       postJson(
         'https://api.resend.com/emails',
@@ -143,7 +138,7 @@ export default async function handler(req, res) {
   }
   body = body && typeof body === 'object' ? body : {};
 
-  const type = body.form_type === 'dental' ? 'dental' : 'general';
+  const type = 'general';
   const spec = FORMS[type];
 
   // Bots: a filled honeypot, or a submission faster than a person can type. Pretend it worked.
@@ -154,7 +149,7 @@ export default async function handler(req, res) {
   for (const [key, max] of Object.entries(spec.text)) fields[key] = oneLine(body[key], max);
   for (const [key, max] of Object.entries(spec.list)) fields[key] = cleanList(body[key], max);
   // Long free-text fields keep their line breaks.
-  for (const key of ['offering', 'challenge', 'notes']) if (key in fields) fields[key] = clean(body[key], spec.text[key]);
+
 
   const errors = {};
   for (const key of spec.required) {

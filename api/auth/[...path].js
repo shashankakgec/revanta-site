@@ -32,9 +32,8 @@ export default async function handler(req, res) {
       body,
       redirect: 'manual',
     });
-    const getSetCookie = upstream.headers.getSetCookie;
-    if (typeof getSetCookie === 'function') {
-      const cookies = getSetCookie().map((cookie) => cookie.replace(/;\s*Domain=[^;]+/ig, ''));
+    if (typeof upstream.headers.getSetCookie === 'function') {
+      const cookies = upstream.headers.getSetCookie().map((cookie) => cookie.replace(/;\s*Domain=[^;]+/ig, ''));
       if (cookies.length) res.setHeader('Set-Cookie', cookies);
     } else {
       const cookie = upstream.headers.get('set-cookie');

@@ -89,7 +89,7 @@ const fields = [
 
 function form({ type, prefix, fields, submit }) {
   return `
-<form class="form" data-form="${type}" action="/api/lead" method="post"${config.contactEmail ? ` data-contact-email="${esc(config.contactEmail)}` : ''}>
+<form class="form" data-form="${type}" action="/api/lead" method="post"${config.contactEmail ? ` data-contact-email="${esc(config.contactEmail)}"` : ''}>
   <input type="hidden" name="form_type" value="${type}">
   <input type="hidden" name="page_path" value="">
   <input type="hidden" name="attribution" value="">

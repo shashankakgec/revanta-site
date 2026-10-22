@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     if (!authUrl) return res.status(503).json({ error: 'auth_not_configured' });
     const host = req.headers.host || '';
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-    const origin = host ? proto + '://' + host : '';
+    const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');
     const auth = await fetch(authUrl + '/get-session', {
       headers: {
         cookie: req.headers.cookie || '',

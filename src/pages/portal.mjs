@@ -58,7 +58,9 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
       <div class="portal-actions"><button class="portal-btn" id="portal-signin-submit" type="submit">Sign in</button></div>
       <p class="portal-msg" id="portal-signin-message" role="status" aria-live="polite"></p>
     </form>
-    <div id="portal-signup-section" hidden>
+    <details id="portal-signup-details" style="margin-top:16px">
+      <summary class="portal-btn portal-btn--light" style="display:inline-block;list-style:none">Create account</summary>
+      <div id="portal-signup-section">
       <div class="portal-divider"></div><h2>Create account</h2>
       <p class="portal-muted">Create your client account. Your projects remain private until Revanta assigns them.</p>
       <form id="portal-signup-form">
@@ -69,10 +71,8 @@ body.page-portal .site-header,body.page-portal .site-footer{display:none}
         <div class="portal-actions"><button class="portal-btn" id="portal-signup-submit" type="submit">Create account</button></div>
         <p class="portal-msg" id="portal-signup-message" role="status" aria-live="polite"></p>
       </form>
-    </div>
-    <div class="portal-divider"></div>
-    <p class="portal-muted" id="portal-auth-toggle-copy" style="margin-bottom:8px">Don’t have an account yet?</p>
-    <button class="portal-btn portal-btn--light" id="portal-auth-toggle" type="button">Create account</button>
+      </div>
+    </details>
   </section>
   <section class="portal-panel portal-client" id="portal-client" hidden>
     <div class="portal-card"><div class="portal-project-head"><div><div class="portal-eyebrow" style="color:#526b8d">Client overview</div><h2 id="portal-greeting">Your workspace</h2><p class="portal-muted" id="portal-account"></p></div><button class="portal-btn portal-btn--light" id="portal-signout" type="button">Sign out</button></div>

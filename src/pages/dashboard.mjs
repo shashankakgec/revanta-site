@@ -50,7 +50,7 @@ export default {
   <section id="dash-login" class="dash-card dash-auth">
     <div class="dash-eyebrow">Lead management</div><h1 style="font-size:32px;margin-top:10px">Welcome back.</h1>
     <p class="dash-sub">Sign in with your authorised Revanta email and password.</p>
-    <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="username" required value="${adminEmail}" readonly><label class="dash-label" for="dash-password">Password</label><input class="dash-input" id="dash-password" type="password" autocomplete="current-password" required minlength="8><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Sign in</button></form>
+    <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="username" required value="${adminEmail}" readonly><label class="dash-label" for="dash-password">Password</label><input class="dash-input" id="dash-password" type="password" autocomplete="current-password" required minlength="8"><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Sign in</button></form>
     <p id="dash-login-message" class="dash-message" role="status">Only the authorised account can access lead records. Sign-in does not send an email.</p>
   </section>
   <section id="dash-app" hidden>

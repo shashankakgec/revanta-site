@@ -53,6 +53,9 @@ export default {
   .dash-table tr:last-child td{border-bottom:0}
   .dash-name{font-weight:700;color:#152846}
   .dash-muted{color:#6c7890;font-size:12px;margin-top:4px;line-height:1.5}
+  .dash-email-link{color:#2563eb;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+  .dash-email-link:hover{color:#1d4ed8}
+  body.page-dashboard.dark-mode .dash-email-link{color:#93c5fd}
   .dash-cell-select{min-width:145px;padding:8px;border:1px solid #d4dce8;border-radius:8px;background:#fff;color:#10203b}
   .dash-date{padding:8px;border:1px solid #d4dce8;border-radius:8px;min-width:145px}
   .dash-notes{display:block;min-width:190px;min-height:58px;padding:8px;border:1px solid #d4dce8;border-radius:8px;box-sizing:border-box}
@@ -218,7 +221,7 @@ export default {
     var priority=dueLeads.filter(function(x){return taskFilter?taskKind(x)===taskFilter:true;}).slice(0,5);
     taskList.innerHTML=priority.length?priority.map(function(x){
       var kind=taskKind(x);var label=kind==='overdue'?'Overdue':kind==='today'?'Due today':'Upcoming';
-      return '<div class="dash-followup-item"><div><strong>'+esc(x.name||'Unnamed lead')+'</strong><p>'+esc(x.email||x.company||'No contact details')+' · '+esc(label)+' · '+esc(dateLabel(x.follow_up_at))+'</p></div><button type="button" class="dash-btn dash-btn--light" data-open-lead="'+esc(x.id)+'">Open lead</button></div>';
+      return '<div class="dash-followup-item"><div><strong>'+esc(x.name||'Unnamed lead')+'</strong><p>'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':esc(x.company||'No contact details'))+' · '+esc(label)+' · '+esc(dateLabel(x.follow_up_at))+'</p></div><button type="button" class="dash-btn dash-btn--light" data-open-lead="'+esc(x.id)+'">Open lead</button></div>';
     }).join(''):'<div class="dash-followup-empty">'+(taskFilter?'No leads in this follow-up group.':'No follow-ups due or scheduled in the next 7 days. Add a follow-up date to a lead to see it here.')+'</div>';
     var visible=allLeads.filter(function(x){
       var hay=[x.name,x.email,x.industry,x.budget,x.company,x.website].join(' ').toLowerCase();
@@ -231,14 +234,14 @@ export default {
     rowsEl.innerHTML=visible.map(function(x){
       var d=x.follow_up_at?new Date(x.follow_up_at):null;
       var localDate=d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
-      return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+esc(x.email||'')+'</div>'+(x.company?'<div class="dash-muted">'+esc(x.company)+'</div>':'')+'</td><td><div>'+esc(x.industry||'—')+'</div><div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div><div class="dash-muted">'+esc(x.form_type||'')+'</div></td><td>'+esc(dateLabel(x.created_at))+'<div class="dash-muted">'+esc(x.page_path||'')+'</div></td><td><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" aria-label="Internal notes" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td></tr>';
+      return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+'</div>'+(x.company?'<div class="dash-muted">'+esc(x.company)+'</div>':'')+'</td><td><div>'+esc(x.industry||'—')+'</div><div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div><div class="dash-muted">'+esc(x.form_type||'')+'</div></td><td>'+esc(dateLabel(x.created_at))+'<div class="dash-muted">'+esc(x.page_path||'')+'</div></td><td><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" aria-label="Internal notes" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td></tr>';
     }).join('');
     if(!visible.length) rowsEl.innerHTML='<tr><td colspan="6" style="padding:24px;color:#6c7890">No leads match this search.</td></tr>';
     cardsEl.innerHTML=visible.map(function(x){
       var d=x.follow_up_at?new Date(x.follow_up_at):null;
       var localDate=d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
       return '<article class="dash-lead-card" data-id="'+esc(x.id)+'">'+
-        '<div class="dash-lead-card-top"><div><h3>'+esc(x.name||'Unnamed')+'</h3><div class="dash-lead-meta">'+esc(x.email||'No email provided')+'</div>'+(x.company?'<div class="dash-lead-meta">'+esc(x.company)+'</div>':'')+'</div><span class="dash-pill">'+esc(x.status||'New')+'</span></div>'+
+        '<div class="dash-lead-card-top"><div><h3>'+esc(x.name||'Unnamed')+'</h3><div class="dash-lead-meta">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'No email provided')+'</div>'+(x.company?'<div class="dash-lead-meta">'+esc(x.company)+'</div>':'')+'</div><span class="dash-pill">'+esc(x.status||'New')+'</span></div>'+
         '<div class="dash-lead-details"><div><span>Industry</span><strong>'+esc(x.industry||'—')+'</strong></div><div><span>Budget</span><strong>'+esc(x.budget||'—')+'</strong></div><div><span>Enquiry type</span><strong>'+esc(x.form_type||'—')+'</strong></div><div><span>Submitted</span><strong>'+esc(dateLabel(x.created_at))+'</strong></div></div>'+
         '<div class="dash-lead-meta">Source page: '+esc(x.page_path||'—')+'</div>'+
         '<div class="dash-card-actions"><div><label>Status</label><select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(st){return '<option'+((x.status||'New')===st?' selected':'')+'>'+st+'</option>';}).join('')+'</select></div><div><label>Follow-up</label><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(localDate)+'" aria-label="Follow-up date"></div></div>'+

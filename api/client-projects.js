@@ -6,7 +6,7 @@ async function currentUser(req) {
   if (!AUTH_URL) return null;
   const host = req.headers.host || '';
   const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const origin = host ? proto + '://' + host : '';
+  const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');
   const response = await fetch(AUTH_URL + '/get-session', {
     headers: {
       cookie: req.headers.cookie || '',

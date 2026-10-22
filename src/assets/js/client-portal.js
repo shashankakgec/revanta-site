@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var URL_BASE='https://zedwounhjhfiuystjfhr.supabase.co', KEY='sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo', db, user, staff=false, items=[];
+var URL_BASE='https://zedwounhjhfiuystjfhr.supabase.co', KEY='sb_publishable_f6tVXoTs5YKs5guQWe16Jg_hPMoDjGo', db, user, items=[];
 var $=function(id){return document.getElementById(id)};
 function msg(id,t,bad){var e=$(id);if(e){e.textContent=t||'';e.className='portal-msg'+(bad?' portal-error':t?' portal-success':'')}}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -10,11 +10,8 @@ var labels={planning:'Planning',in_progress:'In progress',review:'In review',rea
 function card(p,editable){var h='<article class="portal-project" data-id="'+esc(p.id)+'"><div class="portal-project-head"><div><h3>'+esc(p.name)+'</h3><p class="portal-muted">'+esc(p.description||'No milestone details yet.')+'</p></div><span class="portal-pill">'+esc(labels[p.status]||p.status)+'</span></div><div class="portal-links">'+link('Open preview ↗',p.preview_url)+link('Open live website ↗',p.live_url)+'</div>';
 if(editable)h+='<div class="portal-divider"></div><label class="portal-label">Status</label><select class="portal-select" data-status>'+Object.keys(labels).map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+labels[s]+'</option>'}).join('')+'</select><label class="portal-label">Milestone / description</label><textarea class="portal-area" data-desc>'+esc(p.description||'')+'</textarea><label class="portal-label">Preview URL</label><input class="portal-input" data-preview value="'+esc(p.preview_url||'')+'"><label class="portal-label">Live URL</label><input class="portal-input" data-live value="'+esc(p.live_url||'')+'"><div class="portal-actions"><button type="button" class="portal-btn" data-save>Save updates</button></div><p class="portal-msg" data-msg role="status"></p>';
 return h+'</article>'}
-function show(session){user=session&&session.user||null;$('portal-auth').hidden=!!user;$('portal-client').hidden=!user;$('portal-staff').hidden=true;if(user){$('portal-user-id').textContent=user.id;$('portal-account').textContent=user.email||'';$('portal-greeting').textContent='Hello'+(user.user_metadata&&user.user_metadata.full_name?' '+user.user_metadata.full_name:'')+'.'}}
+function show(session){user=session&&session.user||null;$('portal-auth').hidden=!!user;$('portal-client').hidden=!user;if(user){$('portal-user-id').textContent=user.id;$('portal-account').textContent=user.email||'';$('portal-greeting').textContent='Hello'+(user.user_metadata&&user.user_metadata.full_name?' '+user.user_metadata.full_name:'')+'.'}}
 async function load(){
-var roleResult=await db.from('staff_roles').select('role').eq('user_id',user.id).maybeSingle();
-if(roleResult.error)throw roleResult.error;
-staff=!!roleResult.data;
 var meta=user.user_metadata||{}, name=meta.full_name||'', biz=meta.business_name||'';
 // Staff and client records are independent: one login may have both roles.
 var p=await db.from('client_profiles').select('full_name,business_name').eq('user_id',user.id).maybeSingle();
@@ -33,11 +30,8 @@ if(m.error)throw m.error;
 var ids=m.data.map(function(x){return x.project_id});
 if(!ids.length)items=[];
 else{var c=await db.from('client_projects').select('*').in('id',ids).order('updated_at',{ascending:false});if(c.error)throw c.error;items=c.data}
-var all=[];
-if(staff){var staffProjects=await db.from('client_projects').select('*').order('updated_at',{ascending:false});if(staffProjects.error)throw staffProjects.error;all=staffProjects.data}
 $('portal-project-list').innerHTML=items.length?items.map(function(x){return card(x,false)}).join(''):'<div class="portal-empty">No project has been assigned yet. Your project will appear here once Revanta links it to your account.</div>';
-$('portal-staff').hidden=!staff;
-if(staff){$('assign-project').innerHTML='<option value="">Choose a project</option>'+all.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('');$('portal-staff-projects').innerHTML=all.length?all.map(function(x){return card(x,true)}).join(''):'<div class="portal-empty">No projects yet. Create your first project above.</div>'}
+
 }
 function err(e){var s=e&&e.message||'Something went wrong.';if(/invalid login credentials/i.test(s))return 'Email or password is incorrect.';if(/email not confirmed/i.test(s))return 'Email confirmation is still enabled in Supabase. The portal owner needs to disable Confirm email for this testing phase.';if(/user already registered|already been registered|email.*already.*(exist|register)|duplicate/i.test(s))return 'An account with this email already exists. Please sign in instead.';return s}
 var signupMode=false;
@@ -48,9 +42,6 @@ $('portal-signup-form').onsubmit=async function(e){e.preventDefault();var b=$('p
 $('portal-signin-form').onsubmit=async function(e){e.preventDefault();var b=$('portal-signin-submit');b.disabled=true;msg('portal-signin-message','Signing in…',false);try{var res=await db.auth.signInWithPassword({email:$('portal-signin-email').value.trim().toLowerCase(),password:$('portal-signin-password').value});if(res.error)throw res.error;show(res.data);msg('portal-client-message','Loading your workspace…',false);try{await load()}catch(loadError){msg('portal-client-message','You are signed in, but your workspace could not load: '+err(loadError),true)}}catch(e){msg('portal-signin-message',err(e),true)}finally{b.disabled=false}};
 async function signout(){await db.auth.signOut();show(null);setMode(false)}$('portal-signout').onclick=signout;$('portal-staff-signout').onclick=signout;
 $('portal-copy-id').onclick=async function(){try{await navigator.clipboard.writeText(user.id);msg('portal-client-message','Account ID copied.',false)}catch(e){msg('portal-client-message','Select and copy the account ID shown above.',true)}};
-$('portal-project-form').onsubmit=async function(e){e.preventDefault();msg('portal-create-message','Creating project…',false);var payload={name:$('project-name').value.trim(),description:$('project-description').value.trim()||null,status:$('project-status').value,preview_url:url($('project-preview').value.trim())||null,live_url:url($('project-live').value.trim())||null};try{var r=await db.from('client_projects').insert(payload);if(r.error)throw r.error;$('portal-project-form').reset();msg('portal-create-message','Project created. Assign it to a client below.',false);await load()}catch(e){msg('portal-create-message',err(e),true)}};
-$('portal-assign').onclick=async function(){var pid=$('assign-project').value,uid=$('assign-user').value.trim();if(!pid||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uid)){msg('portal-assign-message','Choose a project and enter a valid client account ID.',true);return}msg('portal-assign-message','Assigning…',false);try{var r=await db.from('client_project_members').insert({project_id:pid,user_id:uid,assigned_by:user.id});if(r.error)throw r.error;msg('portal-assign-message','Project assigned.',false)}catch(e){msg('portal-assign-message',err(e),true)}};
-$('portal-staff-projects').onclick=async function(e){var b=e.target.closest('[data-save]');if(!b)return;var c=b.closest('[data-id]'),id=c.dataset.id;b.disabled=true;try{var r=await db.from('client_projects').update({status:c.querySelector('[data-status]').value,description:c.querySelector('[data-desc]').value.trim()||null,preview_url:url(c.querySelector('[data-preview]').value.trim())||null,live_url:url(c.querySelector('[data-live]').value.trim())||null}).eq('id',id);if(r.error)throw r.error;msg('portal-create-message','Project updated.',false);await load()}catch(e){msg('portal-create-message',err(e),true)}finally{b.disabled=false}};
 var s=await db.auth.getSession();if(s.error){msg('portal-signin-message',err(s.error),true);return}if(s.data.session){show(s.data.session);try{await load()}catch(e){msg('portal-client-message',err(e),true)}}
 }
 function loadLibrary(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=init;s.onerror=function(){msg('portal-signin-message','Could not load the sign-in library. Check your connection and refresh the page.',true);msg('portal-signup-message','Could not load the sign-in library. Check your connection and refresh the page.',true)};document.head.appendChild(s)}

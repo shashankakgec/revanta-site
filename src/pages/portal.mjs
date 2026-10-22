@@ -7,6 +7,7 @@ export default {
   body: () => `
 <style>
 body.page-portal{background:#f4f7fb;color:#10203b}
+#portal-signin-form[hidden],#portal-signup-section[hidden]{display:none!important}
 body.page-portal .site-header,body.page-portal .site-footer{display:none}
 .portal{max-width:1080px;margin:auto;padding:30px 20px 70px;font-family:Arial,sans-serif}
 .portal-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:30px}

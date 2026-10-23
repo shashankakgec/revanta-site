@@ -9,16 +9,17 @@ export default async function handler(req, res) {
   const queryIndex = requestUrl.indexOf('?');
   const pathname = queryIndex >= 0 ? requestUrl.slice(0, queryIndex) : requestUrl;
   const search = queryIndex >= 0 ? requestUrl.slice(queryIndex) : '';
-  // Some Vercel runtimes do not populate catch-all query params consistently.
-  // Derive the route from req.url as a fallback so /api/auth/get-session is
-  // forwarded as /get-session instead of accidentally hitting the auth root.
   const queryPath = Array.isArray(req.query.path) ? req.query.path.join('/') : String(req.query.path || '');
   const rawPath = queryPath || (pathname.startsWith('/api/auth/') ? pathname.slice('/api/auth/'.length) : pathname.replace('/api/auth', ''));
   const path = rawPath.split('/').filter(Boolean).join('/');
   console.info('[neon-auth-proxy] incoming', req.method, '/' + path);
+
+  // Forward the actual preview/production host. Hard-coding another preview
+  // branch can cause Neon Auth to reject or misroute sign-in requests.
   const host = req.headers.host;
   const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');
+  const origin = host ? proto + '://' + host : '';
+
   const headers = new Headers();
   for (const key of ['accept', 'content-type', 'cookie', 'authorization', 'user-agent']) {
     if (req.headers[key]) headers.set(key, String(req.headers[key]));
@@ -40,9 +41,8 @@ export default async function handler(req, res) {
       body,
       redirect: 'manual',
     });
-    // Avoid Headers.getSetCookie(), which throws Illegal invocation in this runtime.
     const cookie = upstream.headers.get('set-cookie');
-    if (cookie) res.setHeader('Set-Cookie', cookie.replace(/;\s*Domain=[^;]+/ig, ''));
+    if (cookie) res.setHeader('Set-Cookie', cookie.replace(/;\\s*Domain=[^;]+/ig, ''));
     for (const key of ['content-type', 'cache-control', 'www-authenticate']) {
       const value = upstream.headers.get(key);
       if (value) res.setHeader(key, value);

@@ -111,7 +111,7 @@
   );
 
   // ---- Lead conversion (thank-you page) ------------------------------------------
-  if (d.body && d.body.getAttribute('data-conversion') === 'lead') {
+  if (d.body && d.body.getAttribute('data-conversion') === 'lead' && consent === 'accepted') {
     var type = query.get('type') || '';
     var stamp = session ? read(session, 'rv_lead_fired') : null;
     if (!stamp || Date.now() - stamp > 30000) {

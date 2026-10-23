@@ -13,6 +13,7 @@ const FORMS = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const SITE = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d+)?([/?#].*)?$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const clean = (v, max) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
 const oneLine = (v, max) => clean(v, max).replace(/\s+/g, ' ');
@@ -53,10 +54,15 @@ async function storeLead(lead) {
   if (!process.env.NEON_DATABASE_URL) throw new Error('not_configured');
   const sql = neon(process.env.NEON_DATABASE_URL);
   const f = lead.fields;
+  let visitorId = null;
+  if (lead.visitor_id && UUID.test(lead.visitor_id)) {
+    const known = await sql`SELECT visitor_id FROM public.website_visitors WHERE visitor_id = ${lead.visitor_id}::uuid LIMIT 1`;
+    if (known.length) visitorId = lead.visitor_id;
+  }
   await sql`INSERT INTO public.leads
-    (name,email,company,website,industry,offering,customer_value,channels,challenge,budget,notes,form_type,created_at,page_path,attribution,user_agent,status)
+    (name,email,company,website,industry,offering,customer_value,channels,challenge,budget,notes,form_type,created_at,page_path,attribution,user_agent,status,visitor_id)
     VALUES
-    (${f.name},${f.email},${f.company || null},${f.website || null},${f.industry},${f.offering || null},${f.customer_value || null},${f.channels || []},${f.challenge || null},${f.budget},${f.notes || null},${lead.form_type},${lead.submitted_at},${lead.page},${JSON.stringify(lead.attribution)},${lead.user_agent},'New')`;
+    (${f.name},${f.email},${f.company || null},${f.website || null},${f.industry},${f.offering || null},${f.customer_value || null},${f.channels || []},${f.challenge || null},${f.budget},${f.notes || null},${lead.form_type},${lead.submitted_at},${lead.page},${JSON.stringify(lead.attribution)},${lead.user_agent},'New',${visitorId}::uuid)`;
 }
 
 export default async function handler(req, res) {
@@ -100,6 +106,7 @@ export default async function handler(req, res) {
     page: oneLine(body.page_path, 300),
     fields,
     attribution: sanitizeAttribution(body.attribution),
+    visitor_id: UUID.test(String(body.visitor_id || '')) ? String(body.visitor_id) : null,
     user_agent: oneLine(req.headers['user-agent'], 300),
   };
 

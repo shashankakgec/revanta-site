@@ -27,6 +27,15 @@ export default {
   .dash-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 220px;gap:12px;margin:22px 0}
   .dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
   .dash-followup-panel{background:#fff;border:1px solid #e1e7f0;border-radius:16px;padding:22px;margin:22px 0;box-shadow:0 8px 28px #1223420a}
+  .visitor-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+  .visitor-session-list{margin:8px 0 0;padding-left:18px;line-height:1.65;color:#64748b;font-size:12px}
+  .visitor-session-list code{font-size:11px;overflow-wrap:anywhere}
+  .visitor-analytics-table{min-width:1120px}
+  .visitor-analytics-table details summary{cursor:pointer;font-weight:700;color:#315b98}
+  .visitor-analytics-table .visitor-id{font-family:monospace;font-size:12px;overflow-wrap:anywhere}
+  body.page-dashboard.dark-mode .visitor-session-list{color:#a8b4c8}
+  body.page-dashboard.dark-mode .visitor-analytics-table details summary{color:#93c5fd}
+  @media(max-width:720px){.visitor-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .dash-followup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
   .dash-followup-head h2{font-size:22px;letter-spacing:-.03em;margin:7px 0}
   .dash-followup-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
@@ -142,7 +151,29 @@ export default {
     <div id="dash-status" class="dash-message" role="status">Loading leads…</div>
     <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
     <div id="dash-cards" class="dash-cards" hidden></div>
-    <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the two approved accounts.</p>
+    <p class="dash-foot">Lead details are protected by server-side Neon authentication. Internal notes are visible only to the two approved accounts.</p>
+    <section class="dash-followup-panel" id="visitor-analytics-panel" aria-labelledby="visitor-analytics-heading">
+      <div class="dash-followup-head">
+        <div><div class="dash-eyebrow">Website insights</div><h2 id="visitor-analytics-heading">Returning visitors</h2><p class="dash-sub">Opted-in anonymous browsers, repeat visits, active and passive time, viewed pages, and linked lead details.</p></div>
+        <button class="dash-btn dash-btn--light" id="visitor-analytics-refresh" type="button">Refresh analytics</button>
+      </div>
+      <div class="visitor-stats" id="visitor-analytics-stats">
+        <div class="dash-stat"><span>Unique visitors</span><strong>—</strong></div>
+        <div class="dash-stat"><span>Returning visitors</span><strong>—</strong></div>
+        <div class="dash-stat"><span>Total visits</span><strong>—</strong></div>
+        <div class="dash-stat"><span>Sessions</span><strong>—</strong></div>
+        <div class="dash-stat"><span>Total active time</span><strong>—</strong></div>
+        <div class="dash-stat"><span>Total passive time</span><strong>—</strong></div>
+      </div>
+      <div id="visitor-analytics-status" class="dash-message" role="status">Loading visitor analytics…</div>
+      <div class="dash-table-wrap">
+        <table class="dash-table visitor-analytics-table">
+          <thead><tr><th>Visitor</th><th>First / last seen</th><th>Visits</th><th>Active time</th><th>Passive time</th><th>Linked lead</th><th>Session history</th></tr></thead>
+          <tbody id="visitor-analytics-rows"><tr><td colspan="7" style="padding:24px;color:#6c7890">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="dash-foot">Only opted-in visitors are measured. Active/passive time is an estimate, not proof of attention. History has no automatic expiry. To remove records, an authorised operator must manually delete them in Neon; linked leads remain but are unlinked. Respect applicable deletion requests and legal obligations.</p>
+    </section>
   </section>
 </div>
 <script>
@@ -176,6 +207,46 @@ export default {
     if(!response.ok)throw new Error(data.error==='database_not_configured'?'Neon database is not configured for this preview.':data.error==='auth_not_configured'?'Neon Auth is not configured for this preview.':data.error==='forbidden'?'This account is not authorised.':'Request failed ('+response.status+').');
     return data;
   }
+  function formatDuration(value){
+    var n=Math.max(0,Number(value)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;
+    return h?h+'h '+m+'m':m?m+'m '+s+'s':s+'s';
+  }
+  function renderVisitorAnalytics(data){
+    var summary=data.summary||{}, visitors=data.visitors||[];
+    var stats=[
+      ['Unique visitors',summary.unique_visitors||0],
+      ['Returning visitors',summary.returning_visitors||0],
+      ['Total visits',summary.total_visits||0],
+      ['Sessions',summary.total_sessions||0],
+      ['Total active time',formatDuration(summary.active_seconds)],
+      ['Total passive time',formatDuration(summary.passive_seconds)]
+    ];
+    document.getElementById('visitor-analytics-stats').innerHTML=stats.map(function(x){return '<div class="dash-stat"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>';}).join('');
+    var rows=document.getElementById('visitor-analytics-rows');
+    rows.innerHTML=visitors.map(function(v){
+      var sessions=Array.isArray(v.sessions)?v.sessions:[];
+      var history=sessions.length?sessions.map(function(s){
+        var paths=Array.isArray(s.page_paths)?s.page_paths:[];
+        return '<li><strong>'+esc(dateLabel(s.started_at))+'</strong> · Active '+esc(formatDuration(s.active_seconds))+' · Passive '+esc(formatDuration(s.passive_seconds))+
+          '<br>Pages: '+(paths.length?paths.map(function(p){return '<code>'+esc(p)+'</code>';}).join(', '):'—')+'</li>';
+      }).join(''):'<li>No session details yet.</li>';
+      var lead=v.lead_email?'<strong>'+esc(v.lead_name||'Submitted lead')+'</strong><div class="dash-muted"><a class="dash-email-link" href="mailto:'+esc(v.lead_email)+'">'+esc(v.lead_email)+'</a></div><div class="dash-muted">Submitted '+esc(dateLabel(v.lead_created_at))+'</div>':'<span class="dash-muted">Anonymous · no linked lead</span>';
+      return '<tr><td><div class="dash-name">Visitor</div><div class="visitor-id">'+esc(String(v.visitor_id||'').slice(0,8))+'…</div><div class="dash-muted">Consent '+esc(dateLabel(v.consented_at))+'</div></td>'+
+        '<td><div>'+esc(dateLabel(v.first_seen))+'</div><div class="dash-muted">Last: '+esc(dateLabel(v.last_seen))+'</div></td>'+
+        '<td><strong>'+esc(v.visit_count||0)+'</strong><div class="dash-muted">'+esc(v.session_count||0)+' sessions</div></td>'+
+        '<td>'+esc(formatDuration(v.active_seconds))+'</td><td>'+esc(formatDuration(v.passive_seconds))+'</td><td>'+lead+'</td>'+
+        '<td><details><summary>'+sessions.length+' sessions · view</summary><ul class="visitor-session-list">'+history+'</ul></details></td></tr>';
+    }).join('');
+    if(!visitors.length)rows.innerHTML='<tr><td colspan="7" style="padding:24px;color:#6c7890">No opted-in visitors recorded yet.</td></tr>';
+    msg(document.getElementById('visitor-analytics-status'),'Showing '+visitors.length+' visitors. Data is retained until manually deleted.',false);
+  }
+  async function loadVisitorAnalytics(){
+    var el=document.getElementById('visitor-analytics-status');
+    msg(el,'Loading visitor analytics…',false);
+    try{renderVisitorAnalytics(await api('/api/analytics/admin'));}
+    catch(error){msg(el,'Could not load visitor analytics: '+error.message,true);document.getElementById('visitor-analytics-rows').innerHTML='<tr><td colspan="7" style="padding:24px">Analytics could not be loaded.</td></tr>';}
+  }
+  document.getElementById('visitor-analytics-refresh').addEventListener('click',loadVisitorAnalytics);
   function taskKind(x){if(!x.follow_up_at||x.status==='Won'||x.status==='Lost')return '';var d=new Date(x.follow_up_at),now=new Date();if(isNaN(d.getTime()))return '';var today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),week=new Date(today.getTime()+7*86400000);if(d<today)return 'overdue';if(d<tomorrow)return 'today';if(d<week)return 'upcoming';return '';}
   function render(){
     var q=document.getElementById('dash-search').value.trim().toLowerCase(),filter=document.getElementById('dash-filter').value;
@@ -209,7 +280,7 @@ export default {
     if(!APPROVED_EMAILS.includes(String(user.email||'').toLowerCase())){
       await authClient.signOut();showOut('This account is not authorised for the Revanta dashboard.');return;
     }
-    showIn();await loadLeads();
+    showIn();await loadLeads();await loadVisitorAnalytics();
   }
   loginForm.addEventListener('submit',async function(e){
     e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';

@@ -19,7 +19,7 @@ ${U.pageHero({ title: 'Privacy Policy.' })}
 
       <h2>What we collect</h2>
       <p><strong>Information you submit.</strong> When you request a growth audit we collect the details you enter in the form: name, email, company or practice name, website, location, industry, what the business sells or its main treatments, approximate customer value, current acquisition or marketing channels, monthly marketing budget or spend, your biggest challenge, and any additional information you choose to add.</p>
-      <p><strong>Usage and campaign data.</strong> [If analytics is enabled:] we use [Google Analytics / Google Tag Manager] to understand how the site is used. We also store campaign parameters (such as UTM values) and the first page you visited in your browser so that a form submission can be attributed to the campaign that brought you here.</p>
+      <p><strong>Usage and campaign data.</strong> If you accept optional visitor analytics, we store a random first-party browser identifier and session records such as visit timestamps, pages visited, and estimated active and idle time. This can help us recognize repeat visits from the same browser. If you submit a lead form from that browser, we may associate the opted-in visit history with your submitted lead details. This does not independently identify the person using a browser. This feature does not collect IP addresses or store device fingerprints. Campaign attribution and any third-party analytics tools configured for this site must be described here accurately before launch.</p>
 
       <h2>Please don’t send patient information</h2>
       <p>Our forms are for business inquiries. Do not include patient names, health information or other sensitive personal data in any form field.</p>
@@ -31,7 +31,7 @@ ${U.pageHero({ title: 'Privacy Policy.' })}
       <p>We share information with service providers that help us operate the site and handle inquiries: [hosting provider], [form delivery / CRM provider], [analytics provider]. We may disclose information if required by law. We do not sell personal information. [Confirm with counsel.]</p>
 
       <h2>Cookies and similar technologies</h2>
-      <p>[Describe cookies and browser storage in use, how to opt out, and add a consent mechanism if you serve visitors in regions that require one.]</p>
+      <p>The optional visitor analytics feature uses first-party browser storage to remember your analytics choice and, only after you accept, a random visitor identifier. Use the “Privacy choices” control on the website to change your choice. If you reject or withdraw consent, new visitor analytics tracking stops; previously recorded history is not automatically erased and can be deleted on request or by an authorised administrator. The operation of any third-party analytics tools must be reviewed and disclosed separately before launch.</p>
 
       <h2>Retention</h2>
       <p>[State how long inquiry and analytics data is kept.]</p>

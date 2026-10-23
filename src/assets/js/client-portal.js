@@ -187,7 +187,7 @@
       if (!mod.createAuthClient) throw new Error('Neon Auth client did not load.');
       // The Better Auth client appends its default /api/auth base path itself.
       // Pass only the origin to avoid requests to /api/auth/api/auth/... (404).
-      authClient = mod.createAuthClient(window.location.origin);
+      authClient = mod.createAuthClient(window.location.origin + '/api/auth');
       bind();
       await refreshSession();
     } catch (error) {

@@ -185,9 +185,9 @@
     try {
       var mod = await import('https://esm.sh/@neondatabase/auth@latest');
       if (!mod.createAuthClient) throw new Error('Neon Auth client did not load.');
-      // The Better Auth client appends its default /api/auth base path itself.
-      // Pass only the origin to avoid requests to /api/auth/api/auth/... (404).
-      authClient = mod.createAuthClient(window.location.origin + '/api/auth');
+      // Better Auth adds its default /api/auth path to this base URL.
+      // The same-origin proxy maps /api/auth/<endpoint> to Neon Auth /<endpoint>.
+      authClient = mod.createAuthClient(window.location.origin);
       bind();
       await refreshSession();
     } catch (error) {

@@ -93,6 +93,10 @@
     } catch (e) {
       out.attribution = {};
     }
+    if (w.revanta && typeof w.revanta.attribution === 'function') {
+      var liveAttribution = w.revanta.attribution();
+      if (liveAttribution && liveAttribution.first_touch) out.attribution = liveAttribution;
+    }
     out.visitor_id = w.revanta && typeof w.revanta.visitorId === 'function' ? (w.revanta.visitorId() || '') : '';
     return out;
   }

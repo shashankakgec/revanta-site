@@ -76,7 +76,7 @@
   var api = (w.revanta = w.revanta || {});
 
   api.attribution = function () {
-    return { first_touch: first || null, last_touch: last || null, current: current };
+    return { first_touch: first || null, last_touch: last || null, current: consent === 'accepted' ? current : {} };
   };
 
   // ---- Event helper -----------------------------------------------------------

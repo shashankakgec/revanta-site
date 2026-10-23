@@ -13,7 +13,8 @@ export default async function handler(req, res) {
   // Derive the route from req.url as a fallback so /api/auth/get-session is
   // forwarded as /get-session instead of accidentally hitting the auth root.
   const queryPath = Array.isArray(req.query.path) ? req.query.path.join('/') : String(req.query.path || '');
-  const path = queryPath || pathname.replace(/^\\/api\\/auth\\/?/, '').replace(/^\\/+|\\/+$/g, '');
+  const rawPath = queryPath || (pathname.startsWith('/api/auth/') ? pathname.slice('/api/auth/'.length) : pathname.replace('/api/auth', ''));
+  const path = rawPath.split('/').filter(Boolean).join('/');
   const host = req.headers.host;
   const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
   const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');

@@ -93,6 +93,7 @@
     } catch (e) {
       out.attribution = {};
     }
+    out.visitor_id = w.revanta && typeof w.revanta.visitorId === 'function' ? (w.revanta.visitorId() || '') : '';
     return out;
   }
 

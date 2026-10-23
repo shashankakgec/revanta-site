@@ -80,7 +80,10 @@ const gaHead = (id) =>
   `<script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${id}');</script>`;
 
 function analyticsSnippets() {
-  // Optional analytics vendors are loaded by analytics.js only after affirmative consent.
+  const { gtmId, gaId } = config.analytics;
+  if (!isProduction) return { head: '', body: '' };
+  if (SAFE_ID.test(gtmId)) return { head: gtmHead(gtmId), body: gtmBody(gtmId) };
+  if (SAFE_ID.test(gaId)) return { head: gaHead(gaId), body: '' };
   return { head: '', body: '' };
 }
 
@@ -177,7 +180,7 @@ ${verification}
 ${ld}
 ${analyticsHead}
 </head>
-<body class="${bodyClass}" data-page="${esc(page.path)}" data-gtm-id="${esc(config.analytics.gtmId)}" data-ga-id="${esc(config.analytics.gaId)}"${page.conversion ? ` data-conversion="${esc(page.conversion)}"` : ''}>
+<body class="${bodyClass}" data-page="${esc(page.path)}"${page.conversion ? ` data-conversion="${esc(page.conversion)}"` : ''}>
 ${analyticsBody}
 <a class="skip-link" href="#main">Skip to content</a>
 ${header(page.path)}

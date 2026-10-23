@@ -5,8 +5,8 @@ const STATUSES = new Set(['New', 'Contacted', 'Meeting Booked', 'Won', 'Lost']);
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  if (req.method !== 'GET' && req.method !== 'PATCH') {
-    res.setHeader('Allow', 'GET, PATCH');
+  if (req.method !== 'GET' && req.method !== 'PATCH' && req.method !== 'DELETE') {
+    res.setHeader('Allow', 'GET, PATCH, DELETE');
     return res.status(405).json({ error: 'method_not_allowed' });
   }
   try {
@@ -34,6 +34,15 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const leads = await sql`SELECT id, name, email, industry, budget, form_type, created_at, page_path, status, follow_up_at, internal_notes FROM public.leads ORDER BY created_at DESC LIMIT 500`;
       return res.status(200).json({ leads });
+    }
+    if (req.method === 'DELETE') {
+      let body = req.body || {};
+      if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+      const id = String(body.id || '');
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'invalid_lead_id' });
+      const deleted = await sql`DELETE FROM public.leads WHERE id = ${id} RETURNING id`;
+      if (!deleted.length) return res.status(404).json({ error: 'lead_not_found' });
+      return res.status(200).json({ deleted: true, id: deleted[0].id });
     }
     let body = req.body || {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }

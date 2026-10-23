@@ -15,6 +15,7 @@ export default async function handler(req, res) {
   const queryPath = Array.isArray(req.query.path) ? req.query.path.join('/') : String(req.query.path || '');
   const rawPath = queryPath || (pathname.startsWith('/api/auth/') ? pathname.slice('/api/auth/'.length) : pathname.replace('/api/auth', ''));
   const path = rawPath.split('/').filter(Boolean).join('/');
+  console.info('[neon-auth-proxy] incoming', req.method, '/' + path);
   const host = req.headers.host;
   const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
   const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');
@@ -47,6 +48,7 @@ export default async function handler(req, res) {
       if (value) res.setHeader(key, value);
     }
     const text = await upstream.text();
+    console.info('[neon-auth-proxy] upstream', req.method, '/' + path, upstream.status);
     return res.status(upstream.status).send(text);
   } catch (error) {
     console.error('[neon-auth-proxy] request failed:', error && error.message);

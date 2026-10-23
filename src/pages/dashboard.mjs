@@ -172,7 +172,7 @@ export default {
           <tbody id="visitor-analytics-rows"><tr><td colspan="7" style="padding:24px;color:#6c7890">Loading…</td></tr></tbody>
         </table>
       </div>
-      <p class="dash-foot">Only opted-in visitors are measured. Active/passive time is an estimate, not proof of attention. History has no automatic expiry; respect applicable deletion requests and legal obligations.</p>
+      <p class="dash-foot">Only opted-in visitors are measured. Active/passive time is an estimate, not proof of attention. History has no automatic expiry. To remove records, an authorised operator must manually delete them in Neon; linked leads remain but are unlinked. Respect applicable deletion requests and legal obligations.</p>
     </section>
   </section>
 </div>

@@ -58,6 +58,9 @@ export default {
   .dash-date{padding:8px;border:1px solid #d4dce8;border-radius:8px;min-width:145px}
   .dash-notes{display:block;min-width:190px;min-height:58px;padding:8px;border:1px solid #d4dce8;border-radius:8px;box-sizing:border-box}
   .dash-save{margin-top:7px;padding:8px 10px;font-size:12px}
+  .dash-delete{margin-top:7px;padding:8px 10px;font-size:12px;background:#fff1f2;color:#b42332;border:1px solid #fecdd3;border-radius:8px;font-weight:700;cursor:pointer}
+  .dash-delete:disabled{opacity:.55;cursor:wait}
+  body.page-dashboard.dark-mode .dash-delete{background:#3a1b27;color:#fecdd3;border-color:#713044}
   .dash-foot{color:#738097;font-size:12px;margin-top:16px}
   .dash-view-toggle{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin:0 0 12px}
   .dash-view-btn{border:1px solid #d4dce8;border-radius:9px;background:#fff;color:#43536d;padding:9px 13px;font-weight:700;cursor:pointer}
@@ -140,7 +143,7 @@ export default {
       <button class="dash-view-btn" id="dash-card-view" type="button" aria-pressed="false">▦ Card view</button>
     </div>
     <div id="dash-status" class="dash-message" role="status">Loading leads…</div>
-    <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
+    <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th><th>Actions</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
     <div id="dash-cards" class="dash-cards" hidden></div>
     <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the two approved accounts.</p>
   </section>
@@ -192,8 +195,8 @@ export default {
     function fields(x){var d=x.follow_up_at?new Date(x.follow_up_at):null;return d&&!isNaN(d.getTime())?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';}
     function statusSelect(x){return '<select class="dash-cell-select" data-field="status" aria-label="Lead status">'+['New','Contacted','Meeting Booked','Won','Lost'].map(function(s){return '<option'+(x.status===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select>';}
     function editor(x){return '<div class="dash-card-actions"><div><label>Status</label>'+statusSelect(x)+'</div><div><label>Follow-up</label><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(fields(x))+'" aria-label="Follow-up date"></div></div><div class="dash-card-notes"><label>Internal notes</label><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></div>';}
-    rowsEl.innerHTML=visible.map(function(x){return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+'</div></td><td>'+esc(x.industry||'—')+'<div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div></td><td>'+esc(dateLabel(x.created_at))+'</td><td>'+statusSelect(x)+'</td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(fields(x))+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td></tr>'}).join('');
-    if(!visible.length)rowsEl.innerHTML='<tr><td colspan="6" style="padding:24px;color:#6c7890">No leads match this search.</td></tr>';
+    rowsEl.innerHTML=visible.map(function(x){return '<tr data-id="'+esc(x.id)+'"><td><div class="dash-name">'+esc(x.name||'Unnamed')+'</div><div class="dash-muted">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+'</div></td><td>'+esc(x.industry||'—')+'<div class="dash-muted">Budget: '+esc(x.budget||'—')+'</div></td><td>'+esc(dateLabel(x.created_at))+'</td><td>'+statusSelect(x)+'</td><td><input class="dash-date" data-field="follow_up_at" type="datetime-local" value="'+esc(fields(x))+'" aria-label="Follow-up date"></td><td><textarea class="dash-notes" data-field="internal_notes" maxlength="4000" placeholder="Private notes…">'+esc(x.internal_notes||'')+'</textarea><button class="dash-btn dash-save" data-save type="button">Save changes</button><div class="dash-muted" data-row-message></div></td><td><button class="dash-delete" data-delete type="button">Delete lead</button></td></tr>'}).join('');
+    if(!visible.length)rowsEl.innerHTML='<tr><td colspan="7" style="padding:24px;color:#6c7890">No leads match this search.</td></tr>';
     cardsEl.innerHTML=visible.map(function(x){return '<article class="dash-lead-card" data-id="'+esc(x.id)+'"><div class="dash-lead-card-top"><div><h3>'+esc(x.name||'Unnamed')+'</h3><div class="dash-lead-meta">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'No email')+'</div></div><span class="dash-pill">'+esc(x.status||'New')+'</span></div><div class="dash-lead-details"><div><span>Industry</span><strong>'+esc(x.industry||'—')+'</strong></div><div><span>Budget</span><strong>'+esc(x.budget||'—')+'</strong></div><div><span>Submitted</span><strong>'+esc(dateLabel(x.created_at))+'</strong></div><div><span>Form</span><strong>'+esc(x.form_type||'—')+'</strong></div></div>'+editor(x)+'</article>'}).join('');
     if(!visible.length)cardsEl.innerHTML='<div class="dash-card">No leads match this search.</div>';
     tableWrap.hidden=viewMode!=='table';cardsEl.hidden=viewMode!=='cards';
@@ -227,7 +230,19 @@ export default {
   document.getElementById('dash-followup-list').addEventListener('click',function(e){var b=e.target.closest('[data-open-lead]');if(!b)return;taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();var target=(viewMode==='table'?rowsEl:cardsEl).querySelector('[data-id="'+b.getAttribute('data-open-lead')+'"]');if(target)target.scrollIntoView({behavior:'smooth',block:'center'});});
   tableViewBtn.addEventListener('click',function(){viewMode='table';render();});cardViewBtn.addEventListener('click',function(){viewMode='cards';render();});
   async function saveLead(button){var row=button.closest('[data-id]'),id=row.getAttribute('data-id'),status=row.querySelector('[data-field="status"]').value,follow=row.querySelector('[data-field="follow_up_at"]').value,notes=row.querySelector('[data-field="internal_notes"]').value.trim(),label=row.querySelector('[data-row-message]');button.disabled=true;button.textContent='Saving…';try{var data=await api('/api/dashboard-leads',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,status:status,follow_up_at:follow?new Date(follow).toISOString():null,internal_notes:notes})});var lead=allLeads.find(function(x){return String(x.id)===String(id)});if(lead){lead.status=data.lead.status;lead.follow_up_at=data.lead.follow_up_at;lead.internal_notes=data.lead.internal_notes;}msg(label,'Saved to Neon.',false);render();}catch(e){msg(label,'Not saved: '+e.message,true);button.disabled=false;button.textContent='Save changes';}}
-  rowsEl.addEventListener('click',function(e){var b=e.target.closest('[data-save]');if(b)saveLead(b);});cardsEl.addEventListener('click',function(e){var b=e.target.closest('[data-save]');if(b)saveLead(b);});
+  async function deleteLead(button){
+    var row=button.closest('[data-id]');if(!row)return;
+    var id=row.getAttribute('data-id');
+    var lead=allLeads.find(function(x){return String(x.id)===String(id)});
+    var name=lead&&lead.name?lead.name:'this lead';
+    if(!window.confirm('Permanently delete '+name+'? This cannot be undone.'))return;
+    button.disabled=true;button.textContent='Deleting…';
+    try{await api('/api/dashboard-leads',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})});
+      allLeads=allLeads.filter(function(x){return String(x.id)!==String(id)});render();msg(statusEl,'Lead deleted successfully.',false);
+    }catch(e){var label=row.querySelector('[data-row-message]');if(label)msg(label,'Not deleted: '+e.message,true);else msg(statusEl,'Could not delete lead: '+e.message,true);button.disabled=false;button.textContent='Delete lead';}
+  }
+  rowsEl.addEventListener('click',function(e){var del=e.target.closest('[data-delete]');if(del){deleteLead(del);return;}var b=e.target.closest('[data-save]');if(b)saveLead(b);});
+  cardsEl.addEventListener('click',function(e){var del=e.target.closest('[data-delete]');if(del){deleteLead(del);return;}var b=e.target.closest('[data-save]');if(b)saveLead(b);});
   try{
     var authModule=await import('https://esm.sh/@neondatabase/auth@latest');
     if(!authModule.createAuthClient)throw new Error('Neon Auth client did not load.');

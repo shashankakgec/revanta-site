@@ -34,7 +34,7 @@ ${U.pageHero({ title: 'Privacy Policy.' })}
       <p>The optional visitor analytics feature uses first-party browser storage to remember your analytics choice and, only after you accept, a random visitor identifier. Use the “Privacy choices” control on the website to change your choice. If you reject or withdraw consent, new visitor analytics tracking stops; previously recorded history is not automatically erased and can be deleted on request or by an authorised administrator. The operation of any third-party analytics tools must be reviewed and disclosed separately before launch.</p>
 
       <h2>Retention</h2>
-      <p>[State how long inquiry and analytics data is kept.]</p>
+      <p>Visitor and session analytics records do not automatically expire and are retained until manually removed, subject to applicable legal obligations and valid requests. Lead records may be retained separately for the period necessary to handle the inquiry and meet legal requirements. Final retention periods require legal review before launch.</p>
 
       <h2>Your choices and rights</h2>
       <p>[Describe access, correction, deletion and opt-out rights that apply, and how to exercise them at [privacy contact email].]</p>

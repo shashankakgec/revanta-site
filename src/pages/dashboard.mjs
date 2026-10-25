@@ -106,6 +106,17 @@ export default {
   body.page-dashboard.dark-mode .dash-stat span,body.page-dashboard.dark-mode .dash-lead-details span,body.page-dashboard.dark-mode .dash-card-actions label,body.page-dashboard.dark-mode .dash-card-notes label{color:#a8b4c8}
   body.page-dashboard.dark-mode .dash-pill{background:#263650;color:#dbeafe}
   body.page-dashboard.dark-mode .dash-foot{color:#8999b2}
+  .dash-client-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+  .dash-client-card{background:#fff;border:1px solid #e1e7f0;border-radius:12px;padding:16px;min-width:0}
+  .dash-client-card h3{margin:0 0 7px;font-size:16px;overflow-wrap:anywhere}
+  .dash-client-card p{margin:5px 0;color:#5b6980;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+  .dash-client-card strong{color:#152846}
+  .dash-client-card .dash-pill{margin-bottom:8px}
+  .dash-client-message{white-space:pre-wrap;background:#f8faff;border-radius:9px;padding:10px;margin-top:10px;font-size:12px;color:#52637e}
+  body.page-dashboard.dark-mode .dash-client-card{background:#141e30;border-color:#2a3850}
+  body.page-dashboard.dark-mode .dash-client-card p,body.page-dashboard.dark-mode .dash-client-message{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-client-card strong{color:#f1f5fb}
+  body.page-dashboard.dark-mode .dash-client-message{background:#17243a}
   @media(max-width:720px){.dash-cards{grid-template-columns:1fr}.dash-view-toggle{justify-content:flex-start}.dash-lead-details{gap:10px}}
   @media(max-width:720px){.dash-wrap{padding:22px 14px 50px}.dash-top{align-items:flex-start}.dash-toolbar{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card{padding:18px}.dash-followup-panel{padding:16px}.dash-followup-head{flex-direction:column}.dash-followup-stats{gap:8px}.dash-followup-stat{padding:11px}.dash-followup-stat strong{font-size:22px}.dash-followup-item{align-items:flex-start}.dash-followup-item button{white-space:nowrap}}
 </style>
@@ -145,11 +156,34 @@ export default {
     <div id="dash-cards" class="dash-cards" hidden></div>
     <p class="dash-foot">Lead data is loaded through the Neon-backed API. Only authorized Revanta staff can access this dashboard.</p>
   </section>
+  <section id="client-app" hidden>
+    <div class="dash-eyebrow">Revanta / Client workspace</div>
+    <h1 id="client-heading">Your website</h1>
+    <p id="client-intro" class="dash-sub">View enquiries submitted through your assigned website.</p>
+    <div class="dash-stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+      <div class="dash-stat"><span>Website enquiries</span><strong id="client-lead-count">0</strong></div>
+      <div class="dash-stat"><span>Appointment requests</span><strong id="client-appointment-count">0</strong></div>
+    </div>
+    <section class="dash-followup-panel" aria-labelledby="client-appointments-heading">
+      <div class="dash-eyebrow">Happy Tooth</div>
+      <h2 id="client-appointments-heading">Patient appointment requests</h2>
+      <p class="dash-sub">Requests submitted on your clinic website. A pending request is not yet confirmed by the clinic.</p>
+      <div id="client-appointment-status" class="dash-message" role="status">Loading appointments…</div>
+      <div id="client-appointments" class="dash-client-list"></div>
+    </section>
+    <section class="dash-followup-panel" aria-labelledby="client-leads-heading">
+      <div class="dash-eyebrow">Lead capture</div>
+      <h2 id="client-leads-heading">Website enquiries</h2>
+      <div id="client-leads-status" class="dash-message" role="status">Loading enquiries…</div>
+      <div id="client-leads" class="dash-client-list"></div>
+    </section>
+    <p class="dash-foot">Only records belonging to websites assigned to your signed-in account are shown here.</p>
+  </section>
 </div>
 <script>
 (async function(){
   'use strict';
-  var login=document.getElementById('dash-login'), app=document.getElementById('dash-app');
+  var login=document.getElementById('dash-login'), app=document.getElementById('dash-app'), clientApp=document.getElementById('client-app');
   var loginForm=document.getElementById('dash-login-form'), loginMessage=document.getElementById('dash-login-message');
   var loginButton=document.getElementById('dash-login-btn'), signout=document.getElementById('dash-signout');
   var statusEl=document.getElementById('dash-status'), rowsEl=document.getElementById('dash-rows');
@@ -158,8 +192,49 @@ export default {
   var allLeads=[], taskFilter='', viewMode='table';
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function msg(el,text,error){el.textContent=text;el.classList.toggle('dash-error',!!error);}
-  function showOut(text){login.hidden=false;app.hidden=true;signout.hidden=true;if(text)msg(loginMessage,text,false);}
-  function showIn(){login.hidden=true;app.hidden=false;signout.hidden=false;}
+  function showOut(text){login.hidden=false;app.hidden=true;clientApp.hidden=true;signout.hidden=true;if(text)msg(loginMessage,text,false);}
+  function showIn(){login.hidden=true;app.hidden=false;clientApp.hidden=true;signout.hidden=false;}
+  function showClientIn(){login.hidden=true;app.hidden=true;clientApp.hidden=false;signout.hidden=false;}
+  function renderClientCards(container,items,type){
+    if(!items.length){container.innerHTML='<div class="dash-client-card"><p>No '+type+' have been submitted yet.</p></div>';return;}
+    container.innerHTML=items.map(function(x){
+      if(type==='appointments'){
+        var date=x.preferred_date?new Date(x.preferred_date+'T12:00:00').toLocaleDateString(undefined,{dateStyle:'medium'}):'—';
+        return '<article class="dash-client-card"><span class="dash-pill">'+esc(x.status||'pending')+'</span><h3>'+esc(x.patient_name||'Patient')+'</h3><p><strong>Phone:</strong> '+esc(x.phone||'—')+'</p><p><strong>Email:</strong> '+esc(x.email||'Not provided')+'</p><p><strong>Service:</strong> '+esc(x.service||'—')+'</p><p><strong>Preferred date:</strong> '+esc(date)+'</p><p><strong>Preferred time:</strong> '+esc(x.preferred_time||'—')+'</p><p><strong>Received:</strong> '+esc(dateLabel(x.created_at))+'</p>'+(x.message?'<div class="dash-client-message">'+esc(x.message)+'</div>':'')+'</article>';
+      }
+      return '<article class="dash-client-card"><span class="dash-pill">'+esc(x.status||'New')+'</span><h3>'+esc(x.name||'Website enquiry')+'</h3><p><strong>Email:</strong> '+esc(x.email||'—')+'</p><p><strong>Industry:</strong> '+esc(x.industry||'—')+'</p><p><strong>Budget:</strong> '+esc(x.budget||'—')+'</p><p><strong>Received:</strong> '+esc(dateLabel(x.created_at))+'</p></article>';
+    }).join('');
+  }
+  async function loadClientWorkspace(){
+    var appointmentStatus=document.getElementById('client-appointment-status');
+    var leadsStatus=document.getElementById('client-leads-status');
+    msg(appointmentStatus,'Loading appointment requests…',false);
+    msg(leadsStatus,'Loading website enquiries…',false);
+    try{
+      var data=await api('/api/neon/client-leads');
+      var profile=data.profile||{};
+      var projects=data.projects||[];
+      var clinic=projects.find(function(p){return p.name==='Happy Tooth';});
+      document.getElementById('client-heading').textContent=profile.business_name|| (clinic&&clinic.name) || 'Your website';
+      document.getElementById('client-intro').textContent='Signed in as '+(data.user&&data.user.email?data.user.email:'your account')+'. Here are the enquiries for your assigned website.';
+      var appointments=data.appointments||[],leads=data.leads||[];
+      document.getElementById('client-appointment-count').textContent=appointments.length;
+      document.getElementById('client-lead-count').textContent=leads.length;
+      renderClientCards(document.getElementById('client-appointments'),appointments,'appointments');
+      renderClientCards(document.getElementById('client-leads'),leads,'leads');
+      if(data.appointments_unavailable){
+        msg(appointmentStatus,'The clinic database connection still needs to be configured for this preview. Website enquiries are available below.',true);
+      }else if(!clinic){
+        msg(appointmentStatus,'No Happy Tooth website is assigned to this account.',false);
+      }else{
+        msg(appointmentStatus,'Showing '+appointments.length+' appointment request(s).',false);
+      }
+      msg(leadsStatus,'Showing '+leads.length+' website enquiry/enquiries.',false);
+    }catch(e){
+      msg(appointmentStatus,e.message,true);
+      msg(leadsStatus,e.message,true);
+    }
+  }
   function dateLabel(v){if(!v)return '—';var d=new Date(v);return isNaN(d.getTime())?'—':d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}
   var themeToggle=document.getElementById('dash-theme-toggle');
   function setTheme(theme){var dark=theme==='dark';document.body.classList.toggle('dark-mode',dark);themeToggle.textContent=dark?'☀':'☾';themeToggle.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');try{localStorage.setItem('revanta-dashboard-theme',theme);}catch(e){}}
@@ -208,10 +283,14 @@ export default {
     if(!user){showOut();return;}
     var access = await fetch('/api/neon/portal', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } });
     var accessData = await access.json().catch(function(){ return {}; });
-    if (!access.ok || !accessData.staff) {
-      await authClient.signOut();showOut('This account is not authorised for the Revanta admin dashboard.');return;
+    if (!access.ok) {
+      await authClient.signOut();showOut('Could not verify this account. Please sign in again.');return;
     }
-    showIn();await loadLeads();
+    if (accessData.staff) {
+      showIn();await loadLeads();
+    } else {
+      showClientIn();await loadClientWorkspace();
+    }
   }
   loginForm.addEventListener('submit',async function(e){
     e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';

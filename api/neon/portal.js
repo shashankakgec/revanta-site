@@ -12,8 +12,18 @@ async function session(req) {
   if (!authUrl) throw new Error('Neon Auth is not configured.');
   const cookie = req.headers.cookie || '';
   if (!cookie) return null;
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const origin = host ? proto + '://' + host : '';
+  const headers = { cookie, accept: 'application/json' };
+  // Neon Auth/Better Auth can validate requests against the application origin.
+  // Forward the current deployment origin just as the same-origin auth proxy does.
+  if (origin) {
+    headers.origin = origin;
+    headers.referer = origin + '/admin/clients';
+  }
   const r = await fetch(authUrl.replace(/\/$/, '') + '/get-session', {
-    headers: { cookie, accept: 'application/json' },
+    headers,
     cache: 'no-store',
   });
   if (!r.ok) return null;

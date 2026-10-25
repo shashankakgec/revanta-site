@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { isAuthenticated, originAllowed, parseBody } from "./_auth.js";
+import { isAuthenticated, originAllowed, parseBody } from "../lib/admin-auth.js";
 
 const statuses = new Set(["pending","contacted","confirmed","cancelled"]);
 export default async function handler(req, res) {

@@ -18,7 +18,8 @@ body.page-client-dashboard .site-header,body.page-client-dashboard .site-footer{
 .cd-input,.cd-select{box-sizing:border-box;width:100%;padding:11px;border:1px solid #aebed2;border-radius:9px;font:inherit;background:#fff;color:#10203b}
 .cd-btn{border:0;border-radius:9px;background:#17385f;color:#fff;font-weight:700;padding:11px 15px;cursor:pointer}.cd-btn:disabled{opacity:.6}
 .cd-light{background:#dce7f5;color:#12345a;border:1px solid #b6c9e0}.cd-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
-.cd-muted{font-size:13px;line-height:1.6;color:#42536b}.cd-msg{font-size:13px;line-height:1.5;margin-top:12px;overflow-wrap:anywhere}.cd-error{color:#a42c3a}.cd-success{color:#18734b}
+.cd-muted{font-size:13px;line-height:1.6;color:#42536b}
+.cd-business-name{font-size:20px;font-weight:800;line-height:1.3;color:#17385f;margin:5px 0 0;overflow-wrap:anywhere}.cd-msg{font-size:13px;line-height:1.5;margin-top:12px;overflow-wrap:anywhere}.cd-error{color:#a42c3a}.cd-success{color:#18734b}
 .cd-panel[hidden],.cd-auth[hidden]{display:none!important}
 .cd-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
 .cd-stat{background:#eef3f9;border:1px solid #cbd7e6;border-radius:12px;padding:14px}.cd-stat strong{display:block;font-size:24px;margin-top:6px}.cd-stat span{font-size:12px;color:#62718a}
@@ -36,7 +37,7 @@ body.page-client-dashboard .site-header,body.page-client-dashboard .site-footer{
     <p class="cd-msg" id="cd-auth-message" role="status" aria-live="polite"></p>
   </section>
   <section class="cd-panel" id="cd-dashboard" hidden>
-    <div class="cd-card"><div class="cd-lead-head"><div><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#62718a;font-weight:700">Your lead generation</div><h2 id="cd-greeting">Dashboard overview</h2><p class="cd-muted" id="cd-account"></p><p class="cd-muted" id="cd-business-name"></p></div><button class="cd-btn cd-light" id="cd-signout" type="button">Sign out</button></div>
+    <div class="cd-card"><div class="cd-lead-head"><div><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#62718a;font-weight:700">Your lead generation</div><h2 id="cd-greeting">Dashboard overview</h2><p class="cd-muted" id="cd-account"></p><p class="cd-business-name" id="cd-business-name"></p></div><button class="cd-btn cd-light" id="cd-signout" type="button">Sign out</button></div>
       <div class="cd-stats"><div class="cd-stat"><span>Total leads</span><strong id="cd-total">—</strong></div><div class="cd-stat"><span>New</span><strong id="cd-new">—</strong></div><div class="cd-stat"><span>Contacted</span><strong id="cd-contacted">—</strong></div><div class="cd-stat"><span>Won</span><strong id="cd-won">—</strong></div></div>
     </div>
     <div class="cd-card" style="margin-top:16px"><div class="cd-lead-head"><div><h2>Your leads</h2><p class="cd-muted">Only enquiries associated with your assigned Revanta website project appear here.</p></div><button class="cd-btn cd-light" id="cd-refresh" type="button">Refresh</button></div><div id="cd-leads"><div class="cd-empty">Loading leads…</div></div><p class="cd-msg" id="cd-dashboard-message" role="status"></p></div>

@@ -28,7 +28,7 @@ body.page-client-dashboard .site-header,body.page-client-dashboard .site-footer{
 @media(max-width:700px){.cd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cd-grid{grid-template-columns:1fr}.cd-hero{padding:23px}.cd{padding:18px 13px 45px}.cd-top{align-items:flex-start}}
 </style>
 <div class="cd">
-  <div class="cd-top"><a class="cd-brand" href="/">REVANTA</a><a href="/portal">Project portal ↗</a></div>
+  <div class="cd-top"><a class="cd-brand" href="/">REVANTA</a></div>
   <section class="cd-hero"><div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;opacity:.8">Client workspace · Lead generation</div><h1>Your leads, all in one place.</h1><p>See enquiries collected by the website Revanta built for your business. Each account only sees leads assigned to its own project.</p></section>
   <section class="cd-card cd-auth" id="cd-auth">
     <h2 id="cd-auth-title">Sign in to your lead dashboard</h2><p class="cd-muted" id="cd-auth-copy">Use your Revanta client account. If you don't have one yet, create an account first.</p>

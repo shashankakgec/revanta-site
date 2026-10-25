@@ -18,7 +18,10 @@ async function session(req) {
   });
   if (!r.ok) return null;
   const data = await r.json().catch(() => null);
-  const user = data && (data.user || data.data && data.data.user);
+  const payload = data && typeof data === 'object' ? data : {};
+  // Neon Auth can return different envelope shapes across versions. Match the
+  // session parsing used by the working lead-admin API.
+  const user = payload.user || payload.data?.user || payload.session?.user || payload.data?.session?.user;
   if (!user || !user.id || !user.email) return null;
   return { id: user.id, email: String(user.email).toLowerCase(), name: user.name || '' };
 }

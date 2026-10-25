@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).json({error:"Method not allowed."}); }
   if (!originAllowed(req)) return res.status(403).json({error:"Request origin could not be verified."});
-  const expected = process.env.ADMIN_PASSWORD;
+  const expected = process.env.CLINIC_DASHBOARD_PASSCODE;
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!expected || expected.length < 12 || !secret || secret.length < 32) return res.status(503).json({error:"Admin access is not configured yet."});
   const body = parseBody(req);

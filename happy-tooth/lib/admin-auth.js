@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 export function cookieHeader(req, value, maxAge) {
   const secure = req.headers["x-forwarded-proto"] === "https" || String(req.headers.host || "").endsWith(".vercel.app");
@@ -6,7 +6,7 @@ export function cookieHeader(req, value, maxAge) {
 }
 export function makeSession(secret) {
   const expires = Date.now() + 28800000;
-  const nonce = createHmac("sha256", secret).update(String(Date.now()) + String(Math.random())).digest("hex").slice(0, 24);
+  const nonce = randomBytes(18).toString("hex");
   const payload = String(expires) + "." + nonce;
   const signature = createHmac("sha256", secret).update(payload).digest("base64url");
   return payload + "." + signature;

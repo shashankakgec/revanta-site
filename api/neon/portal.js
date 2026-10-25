@@ -45,8 +45,13 @@ export default async function handler(req, res) {
     if (!user) return send(res, 401, { error: 'sign_in_required' });
     const db = sql();
     const owner = user.email === OWNER_EMAIL;
-    const [roleRecord] = await db`SELECT role FROM public.app_user_roles WHERE user_id = ${user.id}::uuid`;
-    const staff = owner || LEGACY_STAFF_EMAILS.has(user.email) || (roleRecord && roleRecord.role === 'staff');
+    // Known staff emails must be authorised before consulting the optional role table.
+    // This avoids a missing/stale role row or role-table query preventing the existing admin account from entering.
+    let staff = owner || LEGACY_STAFF_EMAILS.has(user.email);
+    if (!staff) {
+      const [roleRecord] = await db`SELECT role FROM public.app_user_roles WHERE user_id = ${user.id}::uuid`;
+      staff = Boolean(roleRecord && roleRecord.role === 'staff');
+    }
     if (req.method === 'GET') {
       const [profile] = await db`SELECT full_name, business_name FROM public.client_profiles WHERE user_id = ${user.id}::uuid`;
       if (staff) {

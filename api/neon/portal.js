@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       const [profile] = await db`SELECT full_name, business_name FROM public.client_profiles WHERE user_id = ${user.id}::uuid`;
       if (staff) {
         const projects = await db`SELECT p.*, COALESCE(json_agg(json_build_object('user_id', m.user_id, 'email', u.email)) FILTER (WHERE m.user_id IS NOT NULL), '[]'::json) AS members FROM public.client_projects p LEFT JOIN public.client_project_members m ON m.project_id=p.id LEFT JOIN neon_auth."user" u ON u.id=m.user_id GROUP BY p.id ORDER BY p.updated_at DESC`;
-        const users = await db`SELECT u.id, u.name, u.email, COALESCE(r.role, 'client') AS role FROM neon_auth."user" u LEFT JOIN public.app_user_roles r ON r.user_id=u.id ORDER BY u.createdAt DESC LIMIT 200`;
+        const users = await db`SELECT u.id, u.name, u.email, CASE WHEN lower(u.email) = ${OWNER_EMAIL} THEN 'owner' WHEN lower(u.email) = 'jaiswalshashank100@gmail.com' THEN 'staff' ELSE COALESCE(r.role, 'client') END AS role FROM neon_auth."user" u LEFT JOIN public.app_user_roles r ON r.user_id=u.id ORDER BY u."createdAt" DESC LIMIT 200`;
         return send(res, 200, { user, staff: true, owner, profile: profile || null, projects, users });
       }
       const projects = await db`SELECT p.id,p.name,p.description,p.status,p.preview_url,p.live_url,p.created_at,p.updated_at FROM public.client_projects p JOIN public.client_project_members m ON m.project_id=p.id WHERE m.user_id=${user.id}::uuid ORDER BY p.updated_at DESC`;

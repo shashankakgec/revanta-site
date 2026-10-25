@@ -1,0 +1,10 @@
+{
+  "name": "happy-tooth-clinic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Happy Tooth dental clinic website",
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2"
+  }
+}

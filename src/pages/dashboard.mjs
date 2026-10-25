@@ -44,6 +44,21 @@ export default {
   .dash-stat{background:#fff;border:1px solid #e1e7f0;border-radius:13px;padding:16px}
   .dash-stat span{display:block;color:#66748a;font-size:12px;margin-bottom:8px}
   .dash-stat strong{font-size:25px;letter-spacing:-.04em}
+  .dash-clients-panel{background:#fff;border:1px solid #e1e7f0;border-radius:16px;padding:22px;margin:22px 0;box-shadow:0 8px 28px #1223420a}
+  .dash-clients-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .dash-clients-head h2{font-size:22px;letter-spacing:-.03em;margin:7px 0}
+  .dash-client-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+  .dash-client-item{border:1px solid #e1e7f0;border-radius:12px;padding:15px;min-width:0}
+  .dash-client-item h3{margin:0 0 5px;font-size:16px;overflow-wrap:anywhere}
+  .dash-client-meta{font-size:12px;color:#66748a;line-height:1.65;overflow-wrap:anywhere}
+  .dash-client-badge{display:inline-block;margin-top:8px;border-radius:999px;background:#edf2f8;color:#40516d;padding:5px 9px;font-size:11px;font-weight:700}
+  .dash-client-projects{margin-top:10px;padding-top:10px;border-top:1px solid #edf0f5;font-size:12px;line-height:1.55;color:#43536d}
+  body.page-dashboard.dark-mode .dash-clients-panel{background:#141e30;border-color:#2a3850;box-shadow:0 8px 28px #00000020}
+  body.page-dashboard.dark-mode .dash-client-item{border-color:#35445d}
+  body.page-dashboard.dark-mode .dash-client-meta{color:#a8b4c8}
+  body.page-dashboard.dark-mode .dash-client-badge{background:#263650;color:#dbeafe}
+  body.page-dashboard.dark-mode .dash-client-projects{border-top-color:#26354b;color:#cbd5e1}
+  @media(max-width:720px){.dash-client-list{grid-template-columns:1fr}}
   .dash-table-wrap{overflow:auto;border:1px solid #e1e7f0;border-radius:14px;background:#fff}
   .dash-table{border-collapse:collapse;width:100%;min-width:1000px;font-size:13px}
   .dash-table th{text-align:left;color:#65728a;font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:#f8faff}
@@ -128,6 +143,11 @@ export default {
       <div class="dash-followup-list" id="dash-followup-list"><p class="dash-message">Loading follow-ups…</p></div>
       <p class="dash-foot">Closed leads (Won or Lost) are excluded. Follow-up times use your device's local time.</p>
     </section>
+    <section class="dash-clients-panel" aria-labelledby="dash-clients-heading">
+      <div class="dash-clients-head"><div><div class="dash-eyebrow">Account overview</div><h2 id="dash-clients-heading">Clients</h2><p class="dash-sub">Client profiles, account emails and assigned websites from Neon.</p></div><button class="dash-btn dash-btn--light" id="dash-clients-refresh" type="button">Refresh clients</button></div>
+      <div class="dash-toolbar" style="margin-bottom:0;grid-template-columns:minmax(220px,1fr)"><input class="dash-input" id="dash-client-search" placeholder="Search client, business or email…" aria-label="Search clients"></div>
+      <div id="dash-clients-status" class="dash-message" role="status">Loading clients…</div><div id="dash-client-list" class="dash-client-list"></div>
+    </section>
     <div class="dash-stats">
       <div class="dash-stat"><span>Total leads</span><strong id="stat-total">—</strong></div>
       <div class="dash-stat"><span>New</span><strong id="stat-new">—</strong></div>
@@ -199,6 +219,22 @@ export default {
     tableViewBtn.setAttribute('aria-pressed',viewMode==='table'?'true':'false');cardViewBtn.setAttribute('aria-pressed',viewMode==='cards'?'true':'false');
     msg(statusEl,'Showing '+visible.length+' of '+allLeads.length+' leads.',false);
   }
+  var clientAccounts=[];
+  function renderClients(){
+    var q=(document.getElementById('dash-client-search').value||'').trim().toLowerCase();
+    var visible=clientAccounts.filter(function(x){return [x.full_name,x.name,x.business_name,x.email,(x.projects||[]).join(' ')].join(' ').toLowerCase().indexOf(q)!==-1;});
+    document.getElementById('dash-clients-status').textContent='Showing '+visible.length+' of '+clientAccounts.length+' client accounts.';
+    document.getElementById('dash-client-list').innerHTML=visible.map(function(x){
+      var name=x.full_name||x.name||'Name not provided', projects=Array.isArray(x.projects)?x.projects:[];
+      return '<article class="dash-client-item"><h3>'+esc(name)+'</h3><div class="dash-client-meta">'+(x.email?'<a class="dash-email-link" href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'Email unavailable')+'</div><div class="dash-client-meta">Business: <strong>'+esc(x.business_name||'Not provided yet')+'</strong></div><span class="dash-client-badge">'+esc(x.role||'client')+'</span><div class="dash-client-projects"><strong>Assigned websites:</strong> '+esc(projects.length?projects.join(', '):'No website assigned')+'</div></article>';
+    }).join('');
+    if(!visible.length)document.getElementById('dash-client-list').innerHTML='<div class="dash-card">No client accounts match this search.</div>';
+  }
+  async function loadClients(){
+    var status=document.getElementById('dash-clients-status');msg(status,'Loading client accounts from Neon…',false);
+    try{var data=await api('/api/neon/portal');if(!data.staff)throw new Error('Admin access is required to view client details.');clientAccounts=(data.users||[]).filter(function(x){return x.role==='client';});renderClients();}
+    catch(e){msg(status,e.message||'Could not load client accounts.',true);document.getElementById('dash-client-list').innerHTML='';}
+  }
   async function loadLeads(){msg(statusEl,'Loading leads from Neon…',false);try{var data=await api('/api/dashboard-leads');allLeads=data.leads||[];render();}catch(e){msg(statusEl,e.message,true);}}
   async function verifySession(){
     var r=await authClient.getSession();
@@ -210,7 +246,7 @@ export default {
     if (!access.ok || !accessData.staff) {
       await authClient.signOut();showOut('This account is not authorised for the Revanta admin dashboard.');return;
     }
-    showIn();await loadLeads();
+    showIn();await Promise.all([loadLeads(),loadClients()]);
   }
   loginForm.addEventListener('submit',async function(e){
     e.preventDefault();loginButton.disabled=true;loginButton.textContent='Signing in…';
@@ -223,6 +259,7 @@ export default {
   });
   signout.addEventListener('click',async function(){try{await authClient.signOut();showOut('You have signed out.');}catch(e){showOut('Sign-out failed. Please reload the page.');}});
   document.getElementById('dash-search').addEventListener('input',render);document.getElementById('dash-filter').addEventListener('change',render);
+  document.getElementById('dash-client-search').addEventListener('input',renderClients);document.getElementById('dash-clients-refresh').addEventListener('click',loadClients);
   document.querySelectorAll('[data-task-filter]').forEach(function(b){b.addEventListener('click',function(){taskFilter=taskFilter===b.getAttribute('data-task-filter')?'':b.getAttribute('data-task-filter');render();});});
   document.getElementById('dash-followup-reset').addEventListener('click',function(){taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();});
   document.getElementById('dash-followup-list').addEventListener('click',function(e){var b=e.target.closest('[data-open-lead]');if(!b)return;taskFilter='';document.getElementById('dash-search').value='';document.getElementById('dash-filter').value='';render();var target=(viewMode==='table'?rowsEl:cardsEl).querySelector('[data-id="'+b.getAttribute('data-open-lead')+'"]');if(target)target.scrollIntoView({behavior:'smooth',block:'center'});});

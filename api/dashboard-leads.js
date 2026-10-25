@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 
 const OWNER_EMAIL = String(process.env.REVANTA_OWNER_EMAIL || 'shashank2310131@akgec.ac.in').trim().toLowerCase();
-const LEGACY_STAFF_EMAILS = new Set(['jaiswalshank100@gmail.com']);
+const LEGACY_STAFF_EMAILS = new Set(['jaiswalshashank100@gmail.com']);
 const STATUSES = new Set(['New', 'Contacted', 'Meeting Booked', 'Won', 'Lost']);
 
 export default async function handler(req, res) {

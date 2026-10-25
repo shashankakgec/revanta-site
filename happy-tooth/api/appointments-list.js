@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { isAuthenticated } from "./_auth.js";
+import { isAuthenticated } from "../lib/admin-auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, private");

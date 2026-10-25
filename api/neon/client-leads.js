@@ -13,8 +13,15 @@ function sameOrigin(req) {
 async function session(req) {
   const authUrl = String(process.env.NEON_AUTH_URL || '').replace(/\/+$/, '');
   if (!authUrl || !req.headers.cookie) return null;
+  const host = req.headers.host || '';
+  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const origin = req.headers.origin || (host ? proto + '://' + host : '');
   const response = await fetch(authUrl + '/get-session', {
-    headers: { cookie: req.headers.cookie, accept: 'application/json' },
+    headers: {
+      cookie: req.headers.cookie,
+      ...(origin ? { origin, referer: origin + String(req.url || '/') } : {}),
+      accept: 'application/json',
+    },
     cache: 'no-store',
   });
   if (!response.ok) return null;

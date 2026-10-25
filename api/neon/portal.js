@@ -12,25 +12,21 @@ async function session(req) {
   if (!authUrl) throw new Error('Neon Auth is not configured.');
   const cookie = req.headers.cookie || '';
   if (!cookie) return null;
-  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
-  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-  const origin = host ? proto + '://' + host : '';
-  const headers = { cookie, accept: 'application/json' };
-  // Neon Auth/Better Auth can validate requests against the application origin.
-  // Forward the current deployment origin just as the same-origin auth proxy does.
-  if (origin) {
-    headers.origin = origin;
-    headers.referer = origin + '/admin/clients';
-  }
-  const r = await fetch(authUrl.replace(/\/$/, '') + '/get-session', {
-    headers,
+
+  // Match the already-working lead-admin API exactly: validate the browser's
+  // session against Neon Auth using its cookie, without synthesizing Origin or
+  // Referer headers from Vercel proxy headers.
+  const r = await fetch(authUrl.replace(/\\/$/, '') + '/get-session', {
+    headers: { cookie, accept: 'application/json' },
     cache: 'no-store',
   });
-  if (!r.ok) return null;
+  if (!r.ok) {
+    // Safe diagnostic: status only. Never log or return cookies or tokens.
+    console.warn('[neon portal api] auth session rejected', r.status);
+    return null;
+  }
   const data = await r.json().catch(() => null);
   const payload = data && typeof data === 'object' ? data : {};
-  // Neon Auth can return different envelope shapes across versions. Match the
-  // session parsing used by the working lead-admin API.
   const user = payload.user || payload.data?.user || payload.session?.user || payload.data?.session?.user;
   if (!user || !user.id || !user.email) return null;
   return { id: user.id, email: String(user.email).toLowerCase(), name: user.name || '' };

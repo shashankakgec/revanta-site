@@ -142,13 +142,12 @@ export default {
     <div id="dash-status" class="dash-message" role="status">Loading leads…</div>
     <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
     <div id="dash-cards" class="dash-cards" hidden></div>
-    <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the two approved accounts.</p>
+    <p class="dash-foot">Lead data is loaded through the Neon-backed API. Only authorized Revanta staff can access this dashboard.</p>
   </section>
 </div>
 <script>
 (async function(){
   'use strict';
-  var APPROVED_EMAILS = ['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in'];
   var login=document.getElementById('dash-login'), app=document.getElementById('dash-app');
   var loginForm=document.getElementById('dash-login-form'), loginMessage=document.getElementById('dash-login-message');
   var loginButton=document.getElementById('dash-login-btn'), signout=document.getElementById('dash-signout');
@@ -206,8 +205,10 @@ export default {
     var data=r&&r.data;
     var user=data&&(data.user||(data.session&&data.session.user));
     if(!user){showOut();return;}
-    if(!APPROVED_EMAILS.includes(String(user.email||'').toLowerCase())){
-      await authClient.signOut();showOut('This account is not authorised for the Revanta dashboard.');return;
+    var access = await fetch('/api/neon/portal', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } });
+    var accessData = await access.json().catch(function(){ return {}; });
+    if (!access.ok || !accessData.staff) {
+      await authClient.signOut();showOut('This account is not authorised for the Revanta admin dashboard.');return;
     }
     showIn();await loadLeads();
   }

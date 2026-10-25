@@ -44,6 +44,7 @@ export default {
   .dash-stat{background:#fff;border:1px solid #e1e7f0;border-radius:13px;padding:16px}
   .dash-stat span{display:block;color:#66748a;font-size:12px;margin-bottom:8px}
   .dash-stat strong{font-size:25px;letter-spacing:-.04em}
+  @media(max-width:720px){.dash-client-list{grid-template-columns:1fr}}
   .dash-table-wrap{overflow:auto;border:1px solid #e1e7f0;border-radius:14px;background:#fff}
   .dash-table{border-collapse:collapse;width:100%;min-width:1000px;font-size:13px}
   .dash-table th{text-align:left;color:#65728a;font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:#f8faff}
@@ -109,7 +110,7 @@ export default {
   @media(max-width:720px){.dash-wrap{padding:22px 14px 50px}.dash-top{align-items:flex-start}.dash-toolbar{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card{padding:18px}.dash-followup-panel{padding:16px}.dash-followup-head{flex-direction:column}.dash-followup-stats{gap:8px}.dash-followup-stat{padding:11px}.dash-followup-stat strong{font-size:22px}.dash-followup-item{align-items:flex-start}.dash-followup-item button{white-space:nowrap}}
 </style>
 <div class="dash-wrap">
-  <div class="dash-top"><div><div class="dash-brand">REVANTA</div><div class="dash-eyebrow" style="margin-top:8px">Private workspace</div></div><div class="dash-top-actions"><button class="dash-theme-btn" id="dash-theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button><button class="dash-btn dash-btn--light" id="dash-signout" hidden>Sign out</button></div></div>
+  <div class="dash-top"><div><div class="dash-brand">REVANTA</div><div class="dash-eyebrow" style="margin-top:8px">Private workspace</div></div><div class="dash-top-actions"><a class="dash-btn dash-btn--light" href="/admin/clients" style="text-decoration:none">Client access</a><button class="dash-theme-btn" id="dash-theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button><button class="dash-btn dash-btn--light" id="dash-signout" hidden>Sign out</button></div></div>
   <section id="dash-login" class="dash-card dash-auth">
     <div class="dash-eyebrow">Lead management</div><h1 style="font-size:32px;margin-top:10px">Welcome back.</h1>
     <p class="dash-sub">Sign in with your authorised Revanta email and password.</p>
@@ -142,13 +143,12 @@ export default {
     <div id="dash-status" class="dash-message" role="status">Loading leads…</div>
     <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Lead</th><th>Enquiry</th><th>Submitted</th><th>Status</th><th>Follow-up</th><th>Internal notes</th></tr></thead><tbody id="dash-rows"></tbody></table></div>
     <div id="dash-cards" class="dash-cards" hidden></div>
-    <p class="dash-foot">Lead details are protected by Supabase row-level security. Internal notes are visible only to the two approved accounts.</p>
+    <p class="dash-foot">Lead data is loaded through the Neon-backed API. Only authorized Revanta staff can access this dashboard.</p>
   </section>
 </div>
 <script>
 (async function(){
   'use strict';
-  var APPROVED_EMAILS = ['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in'];
   var login=document.getElementById('dash-login'), app=document.getElementById('dash-app');
   var loginForm=document.getElementById('dash-login-form'), loginMessage=document.getElementById('dash-login-message');
   var loginButton=document.getElementById('dash-login-btn'), signout=document.getElementById('dash-signout');
@@ -206,8 +206,10 @@ export default {
     var data=r&&r.data;
     var user=data&&(data.user||(data.session&&data.session.user));
     if(!user){showOut();return;}
-    if(!APPROVED_EMAILS.includes(String(user.email||'').toLowerCase())){
-      await authClient.signOut();showOut('This account is not authorised for the Revanta dashboard.');return;
+    var access = await fetch('/api/neon/portal', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } });
+    var accessData = await access.json().catch(function(){ return {}; });
+    if (!access.ok || !accessData.staff) {
+      await authClient.signOut();showOut('This account is not authorised for the Revanta admin dashboard.');return;
     }
     showIn();await loadLeads();
   }

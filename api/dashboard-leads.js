@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 
-const ALLOWED = new Set(['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in']);
+const OWNER_EMAIL = String(process.env.REVANTA_OWNER_EMAIL || 'shashank2310131@akgec.ac.in').trim().toLowerCase();
+const LEGACY_STAFF_EMAILS = new Set(['jaiswalshashank100@gmail.com']);
 const STATUSES = new Set(['New', 'Contacted', 'Meeting Booked', 'Won', 'Lost']);
 
 export default async function handler(req, res) {
@@ -12,13 +13,9 @@ export default async function handler(req, res) {
   try {
     const authUrl = String(process.env.NEON_AUTH_URL || '').replace(/\/+$/, '');
     if (!authUrl) return res.status(503).json({ error: 'auth_not_configured' });
-    const host = req.headers.host || '';
-    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
-    const origin = process.env.VERCEL_ENV === 'preview' ? 'https://revanta-site-git-feature-neon-full-migration-hello-shas.vercel.app' : (host ? proto + '://' + host : '');
     const auth = await fetch(authUrl + '/get-session', {
       headers: {
         cookie: req.headers.cookie || '',
-        ...(origin ? { origin, referer: origin + String(req.url || '/') } : {}),
         accept: 'application/json',
       },
       cache: 'no-store',
@@ -28,9 +25,12 @@ export default async function handler(req, res) {
     const safePayload = payload && typeof payload === 'object' ? payload : {};
     const user = safePayload.user || safePayload.data?.user || safePayload.session?.user || safePayload.data?.session?.user;
     if (!user || !user.email) return res.status(401).json({ error: 'unauthorised' });
-    if (!ALLOWED.has(String(user.email || '').toLowerCase())) return res.status(403).json({ error: 'forbidden' });
     if (!process.env.NEON_DATABASE_URL) return res.status(503).json({ error: 'database_not_configured' });
     const sql = neon(process.env.NEON_DATABASE_URL);
+    const email = String(user.email || '').toLowerCase();
+    const [roleRecord] = await sql`SELECT role FROM public.app_user_roles WHERE user_id = ${user.id}::uuid`;
+    const isStaff = email === OWNER_EMAIL || LEGACY_STAFF_EMAILS.has(email) || (roleRecord && roleRecord.role === 'staff');
+    if (!isStaff) return res.status(403).json({ error: 'forbidden' });
     if (req.method === 'GET') {
       const leads = await sql`SELECT id, name, email, industry, budget, form_type, created_at, page_path, status, follow_up_at, internal_notes FROM public.leads ORDER BY created_at DESC LIMIT 500`;
       return res.status(200).json({ leads });

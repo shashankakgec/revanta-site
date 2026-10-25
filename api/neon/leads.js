@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
-const STAFF_EMAILS = new Set(['jaiswalshashank100@gmail.com', 'shashank2310131@akgec.ac.in']);
+const OWNER_EMAIL = String(process.env.REVANTA_OWNER_EMAIL || 'shashank2310131@akgec.ac.in').trim().toLowerCase();
+const LEGACY_STAFF_EMAILS = new Set(['jaiswalshashank100@gmail.com']);
 function send(res,status,body){res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');return res.status(status).json(body)}
 async function getUser(req){
   if(!process.env.NEON_AUTH_URL||!req.headers.cookie)return null;
@@ -14,9 +15,11 @@ export default async function handler(req,res){
   if(!sameOrigin(req))return send(res,403,{error:'forbidden'});
   const user=await getUser(req);
   if(!user)return send(res,401,{error:'sign_in_required'});
-  if(!STAFF_EMAILS.has(user.email))return send(res,403,{error:'staff_only'});
   if(!process.env.NEON_DATABASE_URL)return send(res,503,{error:'database_not_configured'});
   const sql=neon(process.env.NEON_DATABASE_URL);
+  const [roleRecord]=await sql`SELECT role FROM public.app_user_roles WHERE user_id=${user.id}::uuid`;
+  const staff=user.email===OWNER_EMAIL||LEGACY_STAFF_EMAILS.has(user.email)||(roleRecord&&roleRecord.role==='staff');
+  if(!staff)return send(res,403,{error:'staff_only'});
   try{
     if(req.method==='GET'){
       const leads=await sql`SELECT id,name,email,company,website,industry,budget,offering,customer_value,channels,challenge,notes,form_type,created_at,page_path,attribution,user_agent,status,follow_up_at,internal_notes,updated_at FROM public.leads ORDER BY created_at DESC LIMIT 500`;

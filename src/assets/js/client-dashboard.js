@@ -1,6 +1,6 @@
 (async function(){
 'use strict';
-var AUTH_URL=window.location.origin;
+var AUTH_URL=window.location.origin+'/api/auth';
 var $=function(id){return document.getElementById(id)},auth=null,user=null;
 function msg(id,t,bad){var e=$(id);if(e){e.textContent=t||'';e.className='cd-msg'+(bad?' cd-error':t?' cd-success':'')}}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}

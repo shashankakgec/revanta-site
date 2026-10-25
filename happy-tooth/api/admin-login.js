@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookieHeader, makeSession, originAllowed, parseBody } from "./_auth.js";
+import { cookieHeader, makeSession, originAllowed, parseBody } from "../lib/admin-auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");

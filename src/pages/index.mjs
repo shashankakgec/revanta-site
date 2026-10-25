@@ -13,6 +13,7 @@ import dashboard from './dashboard.mjs';
 import portal from './portal.mjs';
 import neonPortal from './neon-portal.mjs';
 import clientDashboard from './client-dashboard.mjs';
+import adminClients from './admin-clients.mjs';
 import notFound from './not-found.mjs';
 
-export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, portal, neonPortal, clientDashboard, notFound];
+export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, portal, neonPortal, clientDashboard, adminClients, notFound];

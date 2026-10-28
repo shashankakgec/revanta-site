@@ -29,3 +29,7 @@ form?.addEventListener('submit', async (event) => {
   message.textContent = 'Admin authentication is not connected yet. This form does not sign you in.';
   message.style.color = '#ffd3a4';
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

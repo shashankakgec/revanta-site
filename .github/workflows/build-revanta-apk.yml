@@ -1,0 +1,71 @@
+name: Build Revanta Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - revanta-admin-app
+    paths:
+      - ".github/workflows/build-revanta-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: revanta-admin-app
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Prepare Capacitor Android wrapper
+        working-directory: admin-app
+        run: |
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/android@6 @capacitor/cli@6
+          mkdir -p www
+          printf '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>Opening Revanta…</body></html>' > www/index.html
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.revanta.growth",
+            "appName": "Revanta",
+            "webDir": "www",
+            "server": {
+              "url": "https://revanta-growth-3avuii5yj-hello-shas.vercel.app",
+              "cleartext": false,
+              "androidScheme": "https"
+            }
+          }
+          EOF
+          npx cap add android
+          npx cap sync android
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        working-directory: admin-app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: revanta-android-apk
+          path: admin-app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30

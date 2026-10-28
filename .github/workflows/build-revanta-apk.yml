@@ -32,6 +32,11 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
       - name: Prepare Capacitor Android wrapper
         working-directory: admin-app
         run: |
@@ -53,9 +58,6 @@ jobs:
           EOF
           npx cap add android
           npx cap sync android
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Build debug APK
         working-directory: admin-app/android

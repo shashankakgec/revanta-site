@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b35">
+  <meta name="description" content="Revanta — AI-powered growth systems for modern businesses.">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Revanta — Growth, engineered.</title>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Revanta home"><span class="brand-mark">R</span><span>revanta<span class="brand-dot">.</span></span></a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="#services">What we do</a>
+      <a href="#approach">Our approach</a>
+      <button class="button button-small button-outline" id="admin-open">Admin login <span aria-hidden="true">↗</span></button>
+    </nav>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> Strategy · Systems · Growth</div>
+        <h1>Make growth<br>work <span class="gradient-text">smarter.</span></h1>
+        <p class="hero-copy">We help modern businesses turn more attention into action with practical marketing, thoughtful technology, and AI-powered systems.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#services">Explore what we do <span aria-hidden="true">→</span></a>
+          <a class="text-link" href="#approach">How we work <span aria-hidden="true">↘</span></a>
+        </div>
+        <div class="hero-note"><span class="note-line"></span> Built around outcomes, not noise.</div>
+      </div>
+      <div class="hero-visual" aria-label="Abstract growth system illustration">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="visual-core"><span class="core-r">R</span><span class="core-caption">GROWTH<br>SYSTEMS</span></div>
+        <div class="float-card card-top"><span class="mini-icon">↗</span><span><strong>Better conversion</strong><small>Turn interest into action</small></span></div>
+        <div class="float-card card-bottom"><span class="mini-icon mini-purple">✳</span><span><strong>Smarter workflows</strong><small>Less manual busywork</small></span></div>
+        <span class="spark spark-one">✦</span><span class="spark spark-two">✧</span>
+      </div>
+      <div class="hero-bottom"><span>01 / THE REVANTA APPROACH</span><span>Clear strategy. Useful systems. Measurable progress.</span></div>
+    </section>
+
+    <section class="intro section-wrap" id="approach">
+      <div class="section-kicker">A more connected way to grow</div>
+      <div class="intro-grid"><h2>Growth isn't one channel.<br><span class="muted">It's how they work together.</span></h2><p>From the first click to the next conversation, we connect the pieces that help a business get discovered, respond faster, and convert opportunities into customers.</p></div>
+    </section>
+
+    <section class="services section-wrap" id="services">
+      <div class="section-heading"><div><div class="section-kicker">What we do</div><h2>Systems built around<br>your next stage.</h2></div><p>Start with the bottleneck. Build what makes a difference.</p></div>
+      <div class="service-grid">
+        <article class="service-card"><span class="service-number">01</span><div class="service-icon">◎</div><h3>Get discovered</h3><p>Search strategy, paid acquisition, and clearer paths for the right people to find you.</p><span class="service-tags">Acquisition · Search · Campaigns</span></article>
+        <article class="service-card"><span class="service-number">02</span><div class="service-icon icon-lilac">↗</div><h3>Convert more</h3><p>Landing pages and follow-up journeys that make it easier for interest to become action.</p><span class="service-tags">Conversion · Lead journeys · CRO</span></article>
+        <article class="service-card"><span class="service-number">03</span><div class="service-icon icon-mint">✳</div><h3>Work smarter</h3><p>Practical AI and automation that reduce repetitive work and help teams respond consistently.</p><span class="service-tags">AI workflows · Automation · Data</span></article>
+      </div>
+    </section>
+
+    <section class="closing section-wrap">
+      <div><div class="section-kicker">Small steps. Real progress.</div><h2>Build a growth engine<br>that keeps getting better.</h2></div>
+      <a class="button button-primary" href="#services">Explore our services <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+
+  <footer class="footer"><a class="brand" href="/"><span class="brand-mark">R</span><span>revanta<span class="brand-dot">.</span></span></a><span>AI-powered growth systems for modern businesses.</span><button class="footer-admin" id="admin-open-footer">Admin access</button><span>© <span id="year"></span> Revanta</span></footer>
+
+  <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
+    <form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Close">×</button></form>
+    <div class="dialog-brand"><span class="brand-mark">R</span><span>revanta<span class="brand-dot">.</span></span></div>
+    <div class="section-kicker">Restricted area</div>
+    <h2 id="login-title">Admin sign in</h2>
+    <p class="dialog-copy">Sign in to manage Revanta's business workspace.</p>
+    <form id="login-form">
+      <label for="email">Admin email</label><input id="email" name="email" type="email" autocomplete="username" placeholder="you@company.com" required>
+      <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+      <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+      <button class="button button-primary login-submit" type="submit">Continue <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="security-note"><span>●</span> Admin access only. No public registration.</p>
+  </dialog>
+  <script src="/app.js" defer></script>
+</body>
+</html>

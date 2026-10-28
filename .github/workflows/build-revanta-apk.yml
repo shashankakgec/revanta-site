@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - revanta-admin-app
     paths:
       - ".github/workflows/build-revanta-apk.yml"

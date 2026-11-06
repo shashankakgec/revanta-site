@@ -11,6 +11,9 @@ on:
       - "admin-app/**"
       - "src/pages/dashboard.mjs"
       - "api/**"
+      - "src/**"
+      - "build.mjs"
+      - "package.json"
 
 permissions:
   contents: read
@@ -104,26 +107,11 @@ jobs:
           cat > android/app/src/main/java/com/revanta/growth/MainActivity.java <<'EOF'
           package com.revanta.growth;
 
-          import android.Manifest;
-          import android.content.pm.PackageManager;
-          import android.os.Build;
           import android.os.Bundle;
           import android.webkit.CookieManager;
-          import androidx.core.app.ActivityCompat;
-          import androidx.core.content.ContextCompat;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
-              private int permissionIndex = 0;
-              private final String[][] permissionGroups = new String[][] {
-                  {Manifest.permission.POST_NOTIFICATIONS},
-                  {Manifest.permission.CAMERA},
-                  {"MEDIA_GROUP"},
-                  {Manifest.permission.RECORD_AUDIO},
-                  {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                  {Manifest.permission.READ_CONTACTS}
-              };
-
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -131,89 +119,9 @@ jobs:
                       CookieManager.getInstance().setAcceptCookie(true);
                       CookieManager.getInstance().setAcceptThirdPartyCookies(getBridge().getWebView(), true);
                   }
-                  permissionIndex = getPreferences(MODE_PRIVATE).getInt("permission_setup_index", 0);
-                  if (!getPreferences(MODE_PRIVATE).getBoolean("permission_setup_completed", false)) {
-                      getWindow().getDecorView().postDelayed(this::requestNextPermission, 900);
-                  }
-              }
-
-              private String[] runtimePermissionsFor(String group) {
-                  if ("MEDIA_GROUP".equals(group)) {
-                      if (Build.VERSION.SDK_INT >= 34) return new String[] {
-                          Manifest.permission.READ_MEDIA_IMAGES,
-                          Manifest.permission.READ_MEDIA_VIDEO,
-                          Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-                      };
-                      if (Build.VERSION.SDK_INT >= 33) return new String[] {
-                          Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO
-                      };
-                      return new String[] {Manifest.permission.READ_EXTERNAL_STORAGE};
-                  }
-                  if (Build.VERSION.SDK_INT < 33 && Manifest.permission.POST_NOTIFICATIONS.equals(group)) return new String[0];
-                  return new String[] {group};
-              }
-
-              private boolean allGranted(String[] permissions) {
-                  if (permissions.length == 0) return true;
-                  for (String permission : permissions) {
-                      if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) return false;
-                  }
-                  return true;
-              }
-
-              private void requestNextPermission() {
-                  while (permissionIndex < permissionGroups.length) {
-                      String[] requested = runtimePermissionsFor(permissionGroups[permissionIndex][0]);
-                      if (allGranted(requested) || requested.length == 0) {
-                          permissionIndex++;
-                          getPreferences(MODE_PRIVATE).edit().putInt("permission_setup_index", permissionIndex).apply();
-                          continue;
-                      }
-                      int requestCode = 700 + permissionIndex;
-                      permissionIndex++;
-                      getPreferences(MODE_PRIVATE).edit().putInt("permission_setup_index", permissionIndex).apply();
-                      ActivityCompat.requestPermissions(this, requested, requestCode);
-                      return;
-                  }
-                  getPreferences(MODE_PRIVATE).edit()
-                      .putBoolean("permission_setup_completed", true)
-                      .putInt("permission_setup_index", permissionGroups.length)
-                      .apply();
-              }
-
-              @Override
-              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-                  super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-                  if (requestCode >= 700 && requestCode < 700 + permissionGroups.length) {
-                      requestNextPermission();
-                  }
               }
           }
           EOF
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text()
-          permissions = [
-              '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
-              '    <uses-permission android:name="android.permission.CAMERA" />',
-              '    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />',
-              '    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />',
-              '    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />',
-              '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />',
-              '    <uses-permission android:name="android.permission.RECORD_AUDIO" />',
-              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
-              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
-              '    <uses-permission android:name="android.permission.READ_CONTACTS" />'
-          ]
-          for item in permissions:
-              if item not in s:
-                  s = s.replace('<manifest ', '<manifest ', 1)
-                  marker = '<application'
-                  s = s.replace(marker, '\\n'.join(permissions) + '\\n    ' + marker, 1)
-                  break
-          p.write_text(s)
-          PY
           npx cap sync android
 
       - name: Configure release signing

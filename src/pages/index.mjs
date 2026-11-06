@@ -11,6 +11,7 @@ import thanks from './thanks.mjs';
 import privacy from './privacy.mjs';
 import dashboard from './dashboard.mjs';
 import deviceData from './device-data.mjs';
+import siteAnalytics from './site-analytics.mjs';
 import notFound from './not-found.mjs';
 
-export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, deviceData, notFound];
+export default [home, solutions, approach, industries, dental, caseStudies, about, contact, thanks, privacy, dashboard, deviceData, siteAnalytics, notFound];

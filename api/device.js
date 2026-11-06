@@ -69,7 +69,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST' && body.action === 'create_pairing') {
       if (!owner) return json(res, 401, { error: 'Staff access required.' });
-      const code = randomBytes(8).toString('hex').slice(0, 12).toUpperCase();
+      const code = randomBytes(12).toString('hex').toUpperCase();
       const rows = await sql`
         INSERT INTO public.device_pairing_codes (code_hash, created_by, expires_at)
         VALUES (${sha256(code)}, ${owner.id}, NOW() + INTERVAL '15 minutes')
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
       const code = clean(body.pairing_code, 32).toUpperCase();
       const installId = clean(body.install_id, 128);
       const deviceName = clean(body.device_name, 120);
-      if (!/^[A-F0-9]{12}$/.test(code) || !/^[A-Fa-f0-9-]{16,128}$/.test(installId) || !deviceName) {
+      if (!/^[A-F0-9]{24}$/.test(code) || !/^[A-Fa-f0-9-]{16,128}$/.test(installId) || !deviceName) {
         return json(res, 422, { error: 'Enter a valid pairing code and device name.' });
       }
       const matches = await sql`

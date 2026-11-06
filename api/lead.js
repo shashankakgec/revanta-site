@@ -41,11 +41,11 @@ export default async function handler(req, res) {
       (name,email,company,website,industry,budget,form_type,message,created_at,page_path,status,
        follow_up_at,internal_notes,updated_at,offering,customer_value,channels,challenge,notes,attribution,user_agent)
       VALUES
-      (\${f.name},\${f.email},\${f.company||null},\${f.website||null},\${f.industry},\${f.budget},
-       'general',\${f.challenge||f.notes||null},NOW(),\${oneLine(body.page_path,300)||null},'New',
-       NULL,'',NOW(),\${f.offering||null},\${f.customer_value||null},\${f.channels},
-       \${f.challenge||null},\${f.notes||null},\${JSON.stringify(attribution)}::jsonb,
-       \${oneLine(req.headers['user-agent'],300)||null})
+      (${f.name},${f.email},${f.company||null},${f.website||null},${f.industry},${f.budget},
+       'general',${f.challenge||f.notes||null},NOW(),${oneLine(body.page_path,300)||null},'New',
+       NULL,'',NOW(),${f.offering||null},${f.customer_value||null},${f.channels},
+       ${f.challenge||null},${f.notes||null},${JSON.stringify(attribution)}::jsonb,
+       ${oneLine(req.headers['user-agent'],300)||null})
     `;
     return reply(req,res,200,{ok:true});
   } catch(error) {

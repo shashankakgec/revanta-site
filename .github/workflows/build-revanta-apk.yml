@@ -142,8 +142,8 @@ jobs:
           if "signingConfigs {" not in s:
               s = s.replace("android {", "android {\n" + signing, 1)
           import re
-          pattern = r"(buildTypes\\s*\\{\\s*release\\s*\\{)"
-          s, count = re.subn(pattern, r"\\1\\n            signingConfig signingConfigs.release", s, count=1)
+          pattern = r"(buildTypes\s*\{\s*release\s*\{)"
+          s, count = re.subn(pattern, r"\1\n            signingConfig signingConfigs.release", s, count=1)
           if count != 1:
               raise SystemExit("Could not locate the existing release build type in app/build.gradle")
           p.write_text(s)

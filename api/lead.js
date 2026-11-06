@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const SITE = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d+)?([/?#].*)?$/i;
 const clean = (v, max) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
 const oneLine = (v, max) => clean(v, max).replace(/\s+/g, ' ');
 const wantsJson = (req) => /application\/json/.test(req.headers['content-type'] || '') || /application\/json/.test(req.headers.accept || '');
@@ -12,6 +13,24 @@ function sameOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return true;
   try { return new URL(origin).host === req.headers.host; } catch { return false; }
+}
+
+function sanitizeAttribution(a) {
+  const stringMap = (o) => o && typeof o === 'object'
+    ? Object.fromEntries(Object.entries(o).slice(0, 12).map(([k, v]) => [oneLine(k, 40), oneLine(v, 200)]))
+    : {};
+  const touch = (t) => {
+    if (!t || typeof t !== 'object') return null;
+    const out = {};
+    for (const [k, v] of Object.entries(t).slice(0, 8)) {
+      if (k === 'params') out.params = stringMap(v);
+      else if (typeof v === 'string') out[oneLine(k, 40)] = oneLine(v, 300);
+    }
+    return out;
+  };
+  return a && typeof a === 'object'
+    ? { first_touch: touch(a.first_touch), last_touch: touch(a.last_touch), current: stringMap(a.current) }
+    : {};
 }
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -31,11 +50,12 @@ export default async function handler(req, res) {
   const errors={};
   for(const key of ['name','email','industry','budget']) if(!f[key]) errors[key]='This field is required.';
   if(f.email&&!EMAIL.test(f.email)) errors.email='Enter a valid email address.';
+  if(f.website&&!SITE.test(f.website)) errors.website='Enter a valid website address.';
   if(Object.keys(errors).length) return reply(req,res,422,{ok:false,errors});
   if(!process.env.NEON_DATABASE_URL) return reply(req,res,503,{ok:false,error:'not_configured'});
   try {
     const sql=neon(process.env.NEON_DATABASE_URL);
-    const attribution=body.attribution&&typeof body.attribution==='object'?body.attribution:{};
+    const attribution=sanitizeAttribution(body.attribution);
     await sql`
       INSERT INTO public.leads
       (name,email,company,website,industry,budget,form_type,message,created_at,page_path,status,

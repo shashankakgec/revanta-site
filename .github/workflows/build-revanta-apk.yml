@@ -176,3 +176,5 @@ jobs:
           path: admin-app/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 90
+
+# Signing credentials updated; rerun release validation.

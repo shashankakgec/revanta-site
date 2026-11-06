@@ -1,19 +1,30 @@
 import { neon } from '@neondatabase/serverless';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 const STATUSES = new Set(['New', 'Contacted', 'Meeting Booked', 'Won', 'Lost']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const AUTH_URL = 'https://ep-blue-darkness-b3wymttv.neonauth.c-4.ap-southeast-1.aws.neon.tech/neondb/auth';
+const JWKS = createRemoteJWKSet(new URL(AUTH_URL + '/.well-known/jwks.json'));
 const json = (res, status, payload) => res.status(status).json(payload);
 
 async function authorize(req, sql) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  if (!token || token.length > 512) return null;
+  if (!token || token.length > 8192) return null;
+
+  // Neon Auth returns a signed JWT access_token. Its opaque session cookie/token
+  // is a different credential and must not be compared with the JWT.
+  const { payload } = await jwtVerify(token, JWKS, {
+    algorithms: ['EdDSA', 'RS256', 'ES256'],
+  });
+  const userId = String(payload.sub || '');
+  if (!UUID.test(userId)) return null;
+
   const rows = await sql`
     SELECT u.id, u.email, r.role
-    FROM neon_auth.session s
-    JOIN neon_auth."user" u ON u.id = s."userId"
+    FROM neon_auth."user" u
     JOIN public.app_user_roles r ON r.user_id = u.id
-    WHERE s.token = ${token} AND s."expiresAt" > NOW() AND r.role = 'staff'
+    WHERE u.id = ${userId} AND r.role = 'staff'
     LIMIT 1
   `;
   return rows[0] || null;

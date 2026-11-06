@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feature/revanta-final-app
+      - feature/revanta-consent-app
     paths:
       - ".github/workflows/build-revanta-apk.yml"
       - "admin-app/**"

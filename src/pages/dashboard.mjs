@@ -114,7 +114,7 @@ export default {
     <div class="dash-eyebrow">Lead management</div><h1 style="font-size:32px;margin-top:10px">Welcome back.</h1>
     <p class="dash-sub">Sign in with your authorised Revanta email and password.</p>
     <form id="dash-login-form"><label class="dash-label" for="dash-email">Authorised email</label><input class="dash-input" id="dash-email" type="email" autocomplete="username" required placeholder="you@company.com"><label class="dash-label" for="dash-password">Password</label><input class="dash-input" id="dash-password" type="password" autocomplete="current-password" required minlength="8"><button class="dash-btn" id="dash-login-btn" type="submit" style="width:100%;margin-top:16px">Sign in</button></form>
-    <p id="dash-login-message" class="dash-message" role="status">Only the two approved Revanta accounts can access lead records. Sign-in does not send an email.</p>
+    <p id="dash-login-message" class="dash-message" role="status">Access is limited to the authorised Revanta owner account. New account registration is disabled.</p>
   </section>
   <section id="dash-app" hidden>
     <div class="dash-eyebrow">Revanta / Operations</div><h1>Lead dashboard</h1><p class="dash-sub">Review enquiries, track progress and keep follow-ups in one place.</p>

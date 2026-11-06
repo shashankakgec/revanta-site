@@ -150,6 +150,15 @@ jobs:
           PY
           chmod +x gradlew
 
+      - name: Verify keystore and passwords before Gradle
+        working-directory: admin-app/android
+        run: |
+          set -euo pipefail
+          keytool -list -keystore app/revanta-release-key.jks -storepass "$REVANTA_KEYSTORE_PASSWORD" -alias "$REVANTA_KEY_ALIAS" >/dev/null
+          cp app/revanta-release-key.jks /tmp/revanta-signing-check.jks
+          keytool -certreq -alias "$REVANTA_KEY_ALIAS" -keystore /tmp/revanta-signing-check.jks -storepass "$REVANTA_KEYSTORE_PASSWORD" -keypass "$REVANTA_KEY_PASSWORD" -file /tmp/revanta-signing-check.csr >/dev/null
+          echo "Keystore, alias, store password, and private-key password verified."
+
       - name: Build signed release APK
         working-directory: admin-app/android
         run: ./gradlew assembleRelease

@@ -47,7 +47,7 @@ jobs:
           npm install @capacitor/core@6 @capacitor/android@6 @capacitor/cli@6
           mkdir -p www
           printf '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101a2d"><title>Revanta</title></head><body style="margin:0;background:#101a2d;color:#fff;font:16px system-ui;display:grid;min-height:100vh;place-items:center"><p>Connecting securely to Revanta…</p></body></html>' > www/index.html
-          cat > capacitor.config.json <<'EOF'
+          cat > capacitor.config.json <<EOF
           {
             "appId": "com.revanta.growth",
             "appName": "Revanta",

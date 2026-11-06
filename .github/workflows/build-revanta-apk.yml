@@ -21,7 +21,7 @@ permissions:
 jobs:
   build-apk:
     env:
-      APP_URL: ${{ github.ref == 'refs/heads/main' && 'https://revanta.duckdns.org' || 'https://revanta-site-git-feature-revanta-final-app-hello-shas.vercel.app/dashboard' }}
+      APP_URL: https://revanta.duckdns.org
       REVANTA_KEYSTORE_BASE64: ${{ secrets.REVANTA_KEYSTORE_BASE64 }}
       REVANTA_KEYSTORE_PASSWORD: ${{ secrets.REVANTA_KEYSTORE_PASSWORD }}
       REVANTA_KEY_ALIAS: ${{ secrets.REVANTA_KEY_ALIAS }}

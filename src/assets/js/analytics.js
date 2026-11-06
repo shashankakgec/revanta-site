@@ -108,9 +108,9 @@
     }
     var lastTick = Date.now();
     var sentEnd = false;
-    function flush(ending) {
+    function flush(ending, countElapsed) {
       var now = Date.now();
-      var seconds = d.visibilityState === 'visible' ? Math.max(0, Math.min(30, Math.floor((now-lastTick)/1000))) : 0;
+      var seconds = (countElapsed || d.visibilityState === 'visible') ? Math.max(0, Math.min(30, Math.floor((now-lastTick)/1000))) : 0;
       lastTick = now;
       if (ending && sentEnd) return;
       if (ending) sentEnd = true;
@@ -120,10 +120,10 @@
     flush(false);
     var heartbeat = w.setInterval(function(){if(d.visibilityState==='visible')flush(false);},15000);
     d.addEventListener('visibilitychange',function(){
-      if(d.visibilityState==='hidden') flush(false);
+      if(d.visibilityState==='hidden') flush(false,true);
       else lastTick=Date.now();
     });
-    w.addEventListener('pagehide',function(){w.clearInterval(heartbeat);flush(true);});
+    w.addEventListener('pagehide',function(){w.clearInterval(heartbeat);flush(true,true);});
   }
 
   // ---- CTA click tracking -------------------------------------------------------

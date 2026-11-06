@@ -105,7 +105,6 @@ jobs:
           package com.revanta.growth;
 
           import android.Manifest;
-          import android.app.AlertDialog;
           import android.content.pm.PackageManager;
           import android.os.Build;
           import android.os.Bundle;
@@ -113,8 +112,6 @@ jobs:
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
           import com.getcapacitor.BridgeActivity;
-          import java.util.ArrayList;
-          import java.util.List;
 
           public class MainActivity extends BridgeActivity {
               private int permissionIndex = 0;
@@ -126,17 +123,6 @@ jobs:
                   {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
                   {Manifest.permission.READ_CONTACTS}
               };
-              private final String[] permissionTitles = {
-                  "Notifications", "Camera", "Photos and videos", "Microphone", "Location", "Contacts"
-              };
-              private final String[] permissionReasons = {
-                  "Allow notifications if you want Revanta alerts and updates.",
-                  "Allow camera access if you want to capture photos inside Revanta.",
-                  "Allow photo and video access if you want to select media from this device.",
-                  "Allow microphone access if you use a feature that records audio.",
-                  "Allow location access if you use a feature that needs your device location.",
-                  "Allow contacts access if you choose to use contact-related features."
-              };
 
               @Override
               public void onCreate(Bundle savedInstanceState) {
@@ -146,7 +132,7 @@ jobs:
                       CookieManager.getInstance().setAcceptThirdPartyCookies(getBridge().getWebView(), true);
                   }
                   if (!getPreferences(MODE_PRIVATE).getBoolean("permission_setup_completed", false)) {
-                      getWindow().getDecorView().postDelayed(this::showNextPermission, 900);
+                      getWindow().getDecorView().postDelayed(this::requestNextPermission, 900);
                   }
               }
 
@@ -174,22 +160,11 @@ jobs:
                   return true;
               }
 
-              private void showNextPermission() {
+              private void requestNextPermission() {
                   while (permissionIndex < permissionGroups.length) {
                       String[] requested = runtimePermissionsFor(permissionGroups[permissionIndex][0]);
-                      if (allGranted(requested)) { permissionIndex++; continue; }
-                      final int current = permissionIndex;
-                      new AlertDialog.Builder(this)
-                          .setTitle("Revanta · " + permissionTitles[current])
-                          .setMessage(permissionReasons[current] + "\n\nYou can skip this request and continue using Revanta. You can change permissions later in Android Settings.")
-                          .setPositiveButton("Continue", (dialog, which) -> {
-                              String[] perms = runtimePermissionsFor(permissionGroups[current][0]);
-                              if (perms.length == 0) { permissionIndex++; showNextPermission(); }
-                              else ActivityCompat.requestPermissions(this, perms, 700 + current);
-                          })
-                          .setNegativeButton("Skip", (dialog, which) -> { permissionIndex++; showNextPermission(); })
-                          .setCancelable(false)
-                          .show();
+                      if (allGranted(requested) || requested.length == 0) { permissionIndex++; continue; }
+                      ActivityCompat.requestPermissions(this, requested, 700 + permissionIndex);
                       return;
                   }
                   getPreferences(MODE_PRIVATE).edit().putBoolean("permission_setup_completed", true).apply();
@@ -200,7 +175,7 @@ jobs:
                   super.onRequestPermissionsResult(requestCode, permissions, grantResults);
                   if (requestCode >= 700 && requestCode < 700 + permissionGroups.length) {
                       permissionIndex = requestCode - 700 + 1;
-                      showNextPermission();
+                      requestNextPermission();
                   }
               }
           }

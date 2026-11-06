@@ -17,6 +17,8 @@ permissions:
 
 jobs:
   build-apk:
+    env:
+      APP_URL: ${{ github.ref == 'refs/heads/main' && 'https://revanta.duckdns.org/dashboard' || 'https://revanta-site-git-feature-revanta-final-app-hello-shas.vercel.app/dashboard' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -51,7 +53,7 @@ jobs:
             "appName": "Revanta",
             "webDir": "www",
             "server": {
-              "url": "https://revanta.duckdns.org/dashboard",
+              "url": "$APP_URL",
               "cleartext": false,
               "androidScheme": "https"
             }

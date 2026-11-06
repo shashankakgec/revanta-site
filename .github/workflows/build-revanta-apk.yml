@@ -131,6 +131,7 @@ jobs:
                       CookieManager.getInstance().setAcceptCookie(true);
                       CookieManager.getInstance().setAcceptThirdPartyCookies(getBridge().getWebView(), true);
                   }
+                  permissionIndex = getPreferences(MODE_PRIVATE).getInt("permission_setup_index", 0);
                   if (!getPreferences(MODE_PRIVATE).getBoolean("permission_setup_completed", false)) {
                       getWindow().getDecorView().postDelayed(this::requestNextPermission, 900);
                   }
@@ -163,18 +164,27 @@ jobs:
               private void requestNextPermission() {
                   while (permissionIndex < permissionGroups.length) {
                       String[] requested = runtimePermissionsFor(permissionGroups[permissionIndex][0]);
-                      if (allGranted(requested) || requested.length == 0) { permissionIndex++; continue; }
-                      ActivityCompat.requestPermissions(this, requested, 700 + permissionIndex);
+                      if (allGranted(requested) || requested.length == 0) {
+                          permissionIndex++;
+                          getPreferences(MODE_PRIVATE).edit().putInt("permission_setup_index", permissionIndex).apply();
+                          continue;
+                      }
+                      int requestCode = 700 + permissionIndex;
+                      permissionIndex++;
+                      getPreferences(MODE_PRIVATE).edit().putInt("permission_setup_index", permissionIndex).apply();
+                      ActivityCompat.requestPermissions(this, requested, requestCode);
                       return;
                   }
-                  getPreferences(MODE_PRIVATE).edit().putBoolean("permission_setup_completed", true).apply();
+                  getPreferences(MODE_PRIVATE).edit()
+                      .putBoolean("permission_setup_completed", true)
+                      .putInt("permission_setup_index", permissionGroups.length)
+                      .apply();
               }
 
               @Override
               public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
                   super.onRequestPermissionsResult(requestCode, permissions, grantResults);
                   if (requestCode >= 700 && requestCode < 700 + permissionGroups.length) {
-                      permissionIndex = requestCode - 700 + 1;
                       requestNextPermission();
                   }
               }

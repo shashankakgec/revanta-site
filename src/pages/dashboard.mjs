@@ -159,7 +159,7 @@ export default {
   function msg(el,text,bad){el.textContent=text||'';el.classList.toggle('dash-error',!!bad)}
   function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function dataOf(r){return r&&r.data?r.data:r||{}}
-  function tokenOf(r){var d=dataOf(r);return d.session&&d.session.token||d.token||d.data&&d.data.session&&d.data.session.token||''}
+  function tokenOf(r){var d=dataOf(r),s=d.session||d.data&&d.data.session||{};return s.access_token||s.accessToken||d.access_token||d.accessToken||d.token||s.token||''}
   function setTheme(t){var dark=t==='dark';document.body.classList.toggle('dark-mode',dark);$('dash-theme-toggle').textContent=dark?'☀':'☾';$('dash-theme-toggle').setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');try{localStorage.setItem('revanta-dashboard-theme',t)}catch(e){}}
   try{setTheme(localStorage.getItem('revanta-dashboard-theme')||'light')}catch(e){setTheme('light')}
   $('dash-theme-toggle').addEventListener('click',function(){setTheme(document.body.classList.contains('dark-mode')?'light':'dark')});

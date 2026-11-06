@@ -1,9 +1,9 @@
 import { neon } from '@neondatabase/serverless';
 
-const EMAIL = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/;
-const clean = (v, max) => String(v ?? '').replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, '').trim().slice(0, max);
-const oneLine = (v, max) => clean(v, max).replace(/\\s+/g, ' ');
-const wantsJson = (req) => /application\\/json/.test(req.headers['content-type'] || '') || /application\\/json/.test(req.headers.accept || '');
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const clean = (v, max) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
+const oneLine = (v, max) => clean(v, max).replace(/\s+/g, ' ');
+const wantsJson = (req) => /application\/json/.test(req.headers['content-type'] || '') || /application\/json/.test(req.headers.accept || '');
 function reply(req, res, status, payload) {
   if (wantsJson(req)) return res.status(status).json(payload);
   return res.status(status).redirect(303, payload.ok ? '/contact/thanks?type=general' : '/contact#submit-error');
@@ -36,17 +36,17 @@ export default async function handler(req, res) {
   try {
     const sql=neon(process.env.NEON_DATABASE_URL);
     const attribution=body.attribution&&typeof body.attribution==='object'?body.attribution:{};
-    await sql`
+    await sql\`
       INSERT INTO public.leads
       (name,email,company,website,industry,budget,form_type,message,created_at,page_path,status,
        follow_up_at,internal_notes,updated_at,offering,customer_value,channels,challenge,notes,attribution,user_agent)
       VALUES
-      (${f.name},${f.email},${f.company||null},${f.website||null},${f.industry},${f.budget},
-       'general',${f.challenge||f.notes||null},NOW(),${oneLine(body.page_path,300)||null},'New',
-       NULL,'',NOW(),${f.offering||null},${f.customer_value||null},${f.channels},
-       ${f.challenge||null},${f.notes||null},${JSON.stringify(attribution)}::jsonb,
-       ${oneLine(req.headers['user-agent'],300)||null})
-    `;
+      (\${f.name},\${f.email},\${f.company||null},\${f.website||null},\${f.industry},\${f.budget},
+       'general',\${f.challenge||f.notes||null},NOW(),\${oneLine(body.page_path,300)||null},'New',
+       NULL,'',NOW(),\${f.offering||null},\${f.customer_value||null},\${f.channels},
+       \${f.challenge||null},\${f.notes||null},\${JSON.stringify(attribution)}::jsonb,
+       \${oneLine(req.headers['user-agent'],300)||null})
+    \`;
     return reply(req,res,200,{ok:true});
   } catch(error) {
     console.error('[lead] Neon insert failed:',error&&error.message);

@@ -93,6 +93,39 @@
     if (typeof w.gtag === 'function') w.gtag('event', name, payload); // gtag.js (GA4 without GTM)
   };
 
+
+  // ---- Anonymous active-time measurement -----------------------------------
+  // A session-scoped random ID is used; no name, email, IP, fingerprint or device ID is stored.
+  // Time is counted only while this tab is visible, in 15-second heartbeats.
+  var isPrivatePage = d.body && (d.body.classList.contains('page-dashboard') || d.body.classList.contains('page-device-data'));
+  if (!isPrivatePage && w.location.pathname !== '/contact/thanks') {
+    var visitId = session ? safe(function () { return session.getItem('rv_visit_id'); }, null) : null;
+    if (!visitId) {
+      visitId = safe(function () {
+        return w.crypto && w.crypto.randomUUID ? w.crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16)});
+      }, '');
+      if (session) safe(function () { session.setItem('rv_visit_id', visitId); });
+    }
+    var lastTick = Date.now();
+    var sentEnd = false;
+    function flush(ending, countElapsed) {
+      var now = Date.now();
+      var seconds = (countElapsed || d.visibilityState === 'visible') ? Math.max(0, Math.min(30, Math.floor((now-lastTick)/1000))) : 0;
+      lastTick = now;
+      if (ending && sentEnd) return;
+      if (ending) sentEnd = true;
+      var payload = JSON.stringify({session_id:visitId,seconds:seconds,page_path:w.location.pathname,ended:!!ending});
+      safe(function(){ w.fetch('/api/site-analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:!!ending,credentials:'same-origin'}).catch(function(){}); });
+    }
+    flush(false);
+    var heartbeat = w.setInterval(function(){if(d.visibilityState==='visible')flush(false);},15000);
+    d.addEventListener('visibilitychange',function(){
+      if(d.visibilityState==='hidden') flush(false,true);
+      else lastTick=Date.now();
+    });
+    w.addEventListener('pagehide',function(){w.clearInterval(heartbeat);flush(true,true);});
+  }
+
   // ---- CTA click tracking -------------------------------------------------------
   d.addEventListener(
     'click',

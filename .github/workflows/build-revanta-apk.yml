@@ -5,21 +5,24 @@ on:
   push:
     branches:
       - main
-      - revanta-admin-app
+      - feature/revanta-final-app
     paths:
       - ".github/workflows/build-revanta-apk.yml"
+      - "admin-app/**"
+      - "src/pages/dashboard.mjs"
+      - "api/**"
 
 permissions:
   contents: read
 
 jobs:
   build-apk:
+    env:
+      APP_URL: ${{ github.ref == 'refs/heads/main' && 'https://revanta.duckdns.org/dashboard' || 'https://revanta-site-git-feature-revanta-final-app-hello-shas.vercel.app/dashboard' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          ref: revanta-admin-app
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -37,20 +40,20 @@ jobs:
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0"
 
-      - name: Prepare Capacitor Android wrapper
+      - name: Prepare Revanta Android app
         working-directory: admin-app
         run: |
           npm init -y
           npm install @capacitor/core@6 @capacitor/android@6 @capacitor/cli@6
           mkdir -p www
-          printf '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>Opening Revanta…</body></html>' > www/index.html
-          cat > capacitor.config.json <<'EOF'
+          printf '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101a2d"><title>Revanta</title></head><body style="margin:0;background:#101a2d;color:#fff;font:16px system-ui;display:grid;min-height:100vh;place-items:center"><p>Connecting securely to Revanta…</p></body></html>' > www/index.html
+          cat > capacitor.config.json <<EOF
           {
             "appId": "com.revanta.growth",
             "appName": "Revanta",
             "webDir": "www",
             "server": {
-              "url": "https://revanta-growth-3avuii5yj-hello-shas.vercel.app",
+              "url": "$APP_URL",
               "cleartext": false,
               "androidScheme": "https"
             }
@@ -59,16 +62,16 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Build debug APK
+      - name: Build installable APK
         working-directory: admin-app/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: revanta-android-apk
+          name: revanta-final-android-apk
           path: admin-app/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30

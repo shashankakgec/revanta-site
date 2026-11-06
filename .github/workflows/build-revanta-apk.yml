@@ -39,11 +39,17 @@ jobs:
         run: |
           set -e
           for attempt in $(seq 1 18); do
-            admin_code=$(curl -sS -o /tmp/revanta-admin.json -w '%{http_code}' https://revanta.duckdns.org/api/admin || true)
-            if [ "$admin_code" = "401" ]; then break; fi
-            echo "Waiting for production admin API (HTTP $admin_code), attempt $attempt/18"
+            health_code=$(curl -sS -o /tmp/revanta-health.json -w '%{http_code}' https://revanta.duckdns.org/api/health || true)
+            if [ "$health_code" = "200" ]; then break; fi
+            echo "Waiting for Neon database health check (HTTP $health_code), attempt $attempt/18"
             sleep 10
           done
+          if [ "$health_code" != "200" ] || ! grep -q '"ok":true' /tmp/revanta-health.json; then
+            cat /tmp/revanta-health.json || true
+            echo "Neon database health check failed (HTTP $health_code)"
+            exit 1
+          fi
+          admin_code=$(curl -sS -o /tmp/revanta-admin.json -w '%{http_code}' https://revanta.duckdns.org/api/admin || true)
           if [ "$admin_code" != "401" ]; then
             cat /tmp/revanta-admin.json || true
             echo "Admin API should return 401 without a session; got $admin_code"
